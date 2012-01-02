@@ -22,6 +22,8 @@ comp = new xmpp.Component
   host      : "127.0.0.1"
   port      : "8888"
 
+classes = {}
+
 router = new joap.Router comp
 
 router.on "read", (iq, clazz, instance)->
@@ -34,8 +36,8 @@ router.on "add", (iq, clazz, instance) =>
 
   console.log "add iq received"
 
-  if not @classes[clazz]?
-    @router.sendError "add", 404, "The class '#{clazz}' does not exist.", iq
+  if not classes[clazz]?
+    router.sendError "add", 404, "The class '#{clazz}' does not exist.", iq
 
   # ...
 ```
