@@ -108,4 +108,34 @@ class Router extends events.EventEmitter
               value: Router.parse xml.getChild "value"
             }
 
+  @serialize: (val) ->
+
+    switch typeof val
+
+      when "string"
+        (new ltx.Element "string").t(val)
+
+      when "number"
+        if val % 1 is 0
+          (new ltx.Element "i4").t(val.toString())
+        else
+          (new ltx.Element "double").t(val.toString())
+
+      when "boolean"
+        (new ltx.Element "boolean").t(if val is true then "1" else "0")
+
+      when "object"
+        if val instanceof Array
+          vals = (Router.serialize v for v in val)
+          el = (new ltx.Element "array").c("data")
+          for v in vals
+            el.c("value").cnode(v).up()#+.up()
+          el.tree()
+        else
+          struct = new ltx.Element "struct"
+          for own k,v of val
+            struct.c("member").c("name").t(k.toString())
+              .up().c("value").cnode(Router.serialize v)
+          struct.tree()
+
 exports.Router = Router

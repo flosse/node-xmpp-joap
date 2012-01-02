@@ -97,3 +97,22 @@ describe "Router", ->
 
         (expect Router.parse rpc1).toEqual { type: "rpc", method: "test" }
         (expect Router.parse rpc2).toEqual { type: "rpc", method: "test", params: ["abc", true, -0.003 ] }
+
+  describe "serialize", ->
+      it "serializes basic data types", ->
+        obj = {a:"foo", b:2, c: -0.3, d:true, e:[], f:{}}
+
+        (expect Router.serialize "foo" ).toEqual ltx.parse "<string>foo</string>"
+        (expect Router.serialize 2 ).toEqual ltx.parse "<i4>2</i4>"
+        (expect Router.serialize -0.3 ).toEqual ltx.parse "<double>-0.3</double>"
+        (expect Router.serialize true ).toEqual ltx.parse "<boolean>1</boolean>"
+        (expect Router.serialize [] ).toEqual ltx.parse "<array><data></data></array>"
+        (expect Router.serialize ["x", -0.35, false] ).toEqual ltx.parse "<array><data>" +
+          "<value><string>x</string></value><value><double>-0.35</double></value><value>" +
+          "<boolean>0</boolean></value></data></array>"
+        (expect Router.serialize {a:"foo", b:["bar"]} ).toEqual ltx.parse "<struct>"+
+          "<member><name>a</name><value><string>foo</string></value></member>" +
+          "<member><name>b</name>" +
+            "<value><array><data><value><string>bar</string></value></data></array>" +
+            "</value></member>" +
+          "</struct>"
