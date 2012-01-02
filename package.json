@@ -6,7 +6,7 @@
 ,"dependencies": {"node-xmpp": ">=0.3.1"
 		 ,"ltx": ">= 0.1.2"
 		 }
-,"devDependencies": {}
+,"devDependencies": { "jasmine-node": ">=1.0.13" }
 ,"repositories": [{"type": "git"
 		  ,"path": "git://github.com/flosse/node-xmpp-joap.git"
 		  }]

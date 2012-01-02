@@ -26,13 +26,16 @@ classes = {}
 
 router = new joap.Router comp
 
-router.on "read", (iq, clazz, instance)->
+router.on "action", (action, clazz, instance, iq) ->
+  console.log action.type
+
+router.on "read", (action, clazz, instance, iq) ->
   console.log "read iq received"
 
-router.on "edit", (iq, clazz, instance)->
+router.on "edit", (action, clazz, instance, iq) ->
   console.log "edit iq received"
 
-router.on "add", (iq, clazz, instance) =>
+router.on "add", (action, clazz, instance, iq) ->
 
   console.log "add iq received"
 
@@ -40,4 +43,15 @@ router.on "add", (iq, clazz, instance) =>
     router.sendError "add", 404, "The class '#{clazz}' does not exist.", iq
 
   # ...
+
+router.on "rpc", (action, clazz, instance, iq) ->
+  console.log "calling #{action.method} with:"
+  for param in actions.params
+    console.log param
+```
+
+## Running tests
+
+```shell
+jasmine-node --coffee --color spec/
 ```
