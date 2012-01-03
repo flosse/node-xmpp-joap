@@ -23,11 +23,13 @@ comp = new xmpp.Component
   port      : "8888"
 
 classes = {}
+objects = {}
 
 router = new joap.Router comp
 
 router.on "action", (action, clazz, instance, iq) ->
-  console.log action.type
+  if clazz? and instance? and action.type is "read"
+    router.sendResponse joap.serialize(objects[clazz][instance], action), iq
 
 router.on "read", (action, clazz, instance, iq) ->
   console.log "read iq received"

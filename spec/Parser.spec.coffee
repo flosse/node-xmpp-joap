@@ -1,8 +1,7 @@
-describe "Router", ->
+describe "Parser", ->
 
   joap = require "../lib/node-xmpp-joap"
   ltx  = require "ltx"
-  Router = joap.Router
 
   it "checks the stanzas", ->
 
@@ -10,31 +9,31 @@ describe "Router", ->
     nonRpc1 = ltx.parse "<query xmlns='wrong:iq:rpc'></query>"
     nonRpc2 = ltx.parse "<x xmlns='jabber:iq:rpc'></x>"
 
-    joap = ltx.parse "<read xmlns='jabber:iq:joap'/>"
+    joapRead = ltx.parse "<read xmlns='jabber:iq:joap'/>"
     nonJoap1 = ltx.parse "<read xmlns='jabber:iq:wrong'/>"
     nonJoap2 = ltx.parse "<x xmlns='jabber:iq:joap'/>"
 
-    (expect Router.isRPCStanza rpc).toBeTruthy()
-    (expect Router.isRPCStanza nonRpc1).toBeFalsy()
-    (expect Router.isRPCStanza nonRpc2).toBeFalsy()
+    (expect joap.Parser.isRPCStanza rpc).toBeTruthy()
+    (expect joap.Parser.isRPCStanza nonRpc1).toBeFalsy()
+    (expect joap.Parser.isRPCStanza nonRpc2).toBeFalsy()
 
-    (expect Router.isJOAPStanza joap).toBeTruthy()
-    (expect Router.isJOAPStanza nonJoap1).toBeFalsy()
-    (expect Router.isJOAPStanza nonJoap2).toBeFalsy()
+    (expect joap.Parser.isJOAPStanza joapRead).toBeTruthy()
+    (expect joap.Parser.isJOAPStanza nonJoap1).toBeFalsy()
+    (expect joap.Parser.isJOAPStanza nonJoap2).toBeFalsy()
 
   it "checks the type", ->
     read   = ltx.parse "<read xmlns='jabber:iq:joap'/>"
     search = ltx.parse "<search xmlns='jabber:iq:joap'/>"
     rpc    = ltx.parse "<query xmlns='jabber:iq:rpc'></query>"
 
-    (expect Router.getType read).toEqual "read"
-    (expect Router.getType search).toEqual "search"
-    (expect Router.getType rpc).toEqual "rpc"
+    (expect joap.Parser.getType read).toEqual "read"
+    (expect joap.Parser.getType search).toEqual "search"
+    (expect joap.Parser.getType rpc).toEqual "rpc"
 
   describe "parse", ->
 
     it "should be accessible", ->
-      (expect Router.parse).toBeDefined()
+      (expect joap.Parser.parse).toBeDefined()
 
     describe "action", ->
 
@@ -43,8 +42,8 @@ describe "Router", ->
         rpc = ltx.parse "<query xmlns='jabber:iq:rpc'><methodCall>" +
           "<methodName>test</methodName></methodCall></query>"
 
-        (expect Router.parse(describe).type).toEqual "describe"
-        (expect Router.parse(rpc).type).toEqual "rpc"
+        (expect joap.Parser.parse(describe).type).toEqual "describe"
+        (expect joap.Parser.parse(rpc).type).toEqual "rpc"
 
       it "returns the parsed attribute if available", ->
         read1 = ltx.parse "<read xmlns='jabber:iq:joap'>" +
@@ -56,7 +55,7 @@ describe "Router", ->
         read3 = ltx.parse "<read xmlns='jabber:iq:joap'><name>foo</name><name>second</name></read>"
 
         edit = ltx.parse "<edit xmlns='jabber:iq:joap'>" +
-            "<attribute><name>foo</name><value><i4>3</i4></value></attribute>" +
+            "<attribute><name>foo</name><value><int>3</int></value></attribute>" +
             "<attribute>" +
               "<name>bar</name>" +
               "<value>" +
@@ -65,7 +64,7 @@ describe "Router", ->
                     "<name>foo</name>" +
                     "<value>" +
                       "<array><data>" +
-                      "<value><i4>12</i4></value>" +
+                      "<value><int>12</int></value>" +
                       "<value><string>bar</string></value>" +
                       "<value><boolean>0</boolean></value>" +
                       "<value><int>-31</int></value>" +
@@ -89,30 +88,11 @@ describe "Router", ->
           "</params>" +
           "</methodCall></query>"
 
-        (expect Router.parse read1).toEqual { type: "read", attributes:{ foo: "bar", second:"value"} }
-        (expect Router.parse read2).toEqual { type: "read" }
-        (expect Router.parse read3).toEqual { type: "read", limits: ["foo", "second"] }
-        (expect Router.parse edit).toEqual { type: "edit", attributes: {
+        (expect joap.Parser.parse read1).toEqual { type: "read", attributes:{ foo: "bar", second:"value"} }
+        (expect joap.Parser.parse read2).toEqual { type: "read" }
+        (expect joap.Parser.parse read3).toEqual { type: "read", limits: ["foo", "second"] }
+        (expect joap.Parser.parse edit).toEqual { type: "edit", attributes: {
           foo: 3, bar: { foo: [12,"bar", false, -31]} }}
 
-        (expect Router.parse rpc1).toEqual { type: "rpc", method: "test" }
-        (expect Router.parse rpc2).toEqual { type: "rpc", method: "test", params: ["abc", true, -0.003 ] }
-
-  describe "serialize", ->
-      it "serializes basic data types", ->
-        obj = {a:"foo", b:2, c: -0.3, d:true, e:[], f:{}}
-
-        (expect Router.serialize "foo" ).toEqual ltx.parse "<string>foo</string>"
-        (expect Router.serialize 2 ).toEqual ltx.parse "<i4>2</i4>"
-        (expect Router.serialize -0.3 ).toEqual ltx.parse "<double>-0.3</double>"
-        (expect Router.serialize true ).toEqual ltx.parse "<boolean>1</boolean>"
-        (expect Router.serialize [] ).toEqual ltx.parse "<array><data></data></array>"
-        (expect Router.serialize ["x", -0.35, false] ).toEqual ltx.parse "<array><data>" +
-          "<value><string>x</string></value><value><double>-0.35</double></value><value>" +
-          "<boolean>0</boolean></value></data></array>"
-        (expect Router.serialize {a:"foo", b:["bar"]} ).toEqual ltx.parse "<struct>"+
-          "<member><name>a</name><value><string>foo</string></value></member>" +
-          "<member><name>b</name>" +
-            "<value><array><data><value><string>bar</string></value></data></array>" +
-            "</value></member>" +
-          "</struct>"
+        (expect joap.Parser.parse rpc1).toEqual { type: "rpc", method: "test" }
+        (expect joap.Parser.parse rpc2).toEqual { type: "rpc", method: "test", params: ["abc", true, -0.003 ] }

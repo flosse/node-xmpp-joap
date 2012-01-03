@@ -1,1 +1,2 @@
 lib/*.coffee
+spec/*.coffee
