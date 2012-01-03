@@ -8,6 +8,8 @@ describe "Serializer", ->
 
     it "serializes basic data types", ->
 
+      (expect Serializer.serialize null ).toEqual ""
+      (expect Serializer.serialize undefined ).toEqual ""
       (expect Serializer.serialize "foo" ).toEqual ltx.parse "<string>foo</string>"
       (expect Serializer.serialize 2 ).toEqual ltx.parse "<int>2</int>"
       (expect Serializer.serialize -0.3 ).toEqual ltx.parse "<double>-0.3</double>"
@@ -43,7 +45,7 @@ describe "Serializer", ->
       (expect Serializer.serialize null, editAct).toEqual ltx.parse "<edit xmlns='jabber:iq:joap' />"
       (expect Serializer.serialize addr, editAct).toEqual ltx.parse "<edit xmlns='jabber:iq:joap' >" +
         "<newAddress>#{addr}</newAddress></edit>"
-      
+
       (expect Serializer.serialize null, delAct).toEqual ltx.parse "<delete xmlns='jabber:iq:joap' />"
 
       searchResults = ["a", "b", "c"]

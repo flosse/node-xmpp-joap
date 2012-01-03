@@ -11,16 +11,17 @@ class Router extends events.EventEmitter
   constructor: (@xmpp) ->
     @xmpp.on "stanza", (iq) =>
 
-      if iq.name is "iq" and (joap.isJOAPStanza xml or joap.isRPCStanza xml)
+      if iq.name is "iq"
 
         child    = iq.children?[0]
         to       = iq.attrs.to
         clazz    = to.split('@')[0]
         instance = to.split('/')[1]
+        action   = joap.parse child
 
-        action = joap.parse child
-        @emit action.type, action, clazz, instance, iq
-        @emit "action", action, clazz, instance, iq
+        if action.type?
+          @emit action.type, action, clazz, instance, iq
+          @emit "action", action, clazz, instance, iq
 
   sendError: (action, code, msg, iq) ->
 

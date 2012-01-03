@@ -55,5 +55,6 @@ class Serializer
             new joap.Array val
           else
             new joap.Struct val
+    else ""
 
 exports.Serializer = Serializer

@@ -24,7 +24,7 @@ class Parser
     else if xml instanceof Array
       (Parser.parse c for c in xml)
 
-    else if xml instanceof ltx.Element
+    else if typeof xml is "object"
 
       if Parser.isJOAPStanza xml
         action = {

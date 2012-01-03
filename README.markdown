@@ -12,6 +12,28 @@ With package manager [npm](http://npmjs.org/):
 
 ## Usage
 
+### Manager
+
+```coffeescript
+xmpp = require "node-xmpp"
+joap = require "node-xmpp-joap"
+
+comp = new xmpp.Component
+  jid       : "mycomponent"
+  password  : "secret"
+  host      : "127.0.0.1"
+  port      : "8888"
+
+class User
+  constructor: (params) ->
+    { @name, @age } = params
+
+mgr = new joap.Manager comp
+mgr.addClass "User", User, ["name"]
+```
+
+### Router
+
 ```coffeescript
 xmpp = require "node-xmpp"
 joap = require "node-xmpp-joap"
