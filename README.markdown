@@ -28,8 +28,20 @@ class User
   constructor: (params) ->
     { @name, @age } = params
 
+# create a new manager instance
 mgr = new joap.Manager comp
-mgr.addClass "User", User, ["name"]
+
+# add a class
+mgr.addClass "User", User, ["name", "age"], ["name"]
+
+# implement the ACL by overriding the method
+mgr.hasPermission = (action) ->
+
+  if myACLRules(action.from, action.type, action.class, action.instance)
+    true
+  else
+    false
+
 ```
 
 ### Router
@@ -49,26 +61,25 @@ objects = {}
 
 router = new joap.Router comp
 
-router.on "action", (action, clazz, instance, iq) ->
-  if clazz? and instance? and action.type is "read"
-    router.sendResponse joap.serialize(objects[clazz][instance], action), iq
+router.on "action", (a) ->
+  if a.class? and a.instance? and a.type is "read"
+    router.sendResponse a, objects[a.class][a.instance]
 
-router.on "read", (action, clazz, instance, iq) ->
+router.on "read", (action) ->
   console.log "read iq received"
 
-router.on "edit", (action, clazz, instance, iq) ->
+router.on "edit", (action) ->
   console.log "edit iq received"
 
-router.on "add", (action, clazz, instance, iq) ->
-
+router.on "add", (action) ->
   console.log "add iq received"
 
-  if not classes[clazz]?
-    router.sendError "add", 404, "The class '#{clazz}' does not exist.", iq
+  if not classes[action.class]?
+    router.sendError "add", 404, "The class '#{action.class}' does not exists."
 
   # ...
 
-router.on "rpc", (action, clazz, instance, iq) ->
+router.on "rpc", (action) ->
   console.log "calling #{action.method} with:"
   for param in actions.params
     console.log param

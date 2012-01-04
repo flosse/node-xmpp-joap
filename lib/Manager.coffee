@@ -1,8 +1,6 @@
 events  = require "events"
 joap    = require "node-xmpp-joap"
 
-YOUR_NOT_AUTH = "You are not authorized"
-
 class Manager extends events.EventEmitter
 
   constructor: (@xmpp) ->
@@ -11,63 +9,95 @@ class Manager extends events.EventEmitter
     @router = new joap.Router @xmpp
     @router.on "add", @onAdd
     @router.on "read", @onRead
+    @router.on "edit", @onEdit
+    @router.on "delete", @onDelete
 
-  hasPermission: (jid, action, clazz) -> true
-
-  addClass: (name, creator, required=[], notWritable=[]) ->
+  addClass: (name, creator, required=[], protected=[]) ->
     if typeof creator is "function" and not @classes[name]?
-      @classes[name] = {creator:creator, required:required, notWritable:notWritable}
+      @classes[name] = { creator:creator, required:required, protected:protected }
       @objects[name] = {}
       true
     else false
 
-  create: (clazzName, params) ->
-    clazz = @classes[clazzName]
-    if clazz?
-      for r in clazz.required
-        return false if not params[r]?
-      x = new clazz.creator params
-      if not x.id or @objects[clazzName][x.id]?
-        x.id = joap.uniqueId()
-      @objects[clazzName][x.id] = x
-      "#{clazzName}@#{@router.xmpp.jid}/#{x.id}"
-    else false
+  createClass: (a) ->
+    clazz = @classes[a.class]
+    x = new clazz.creator a.attributes
+    if not x.id or @objects[a.class][x.id]?
+      x.id = joap.uniqueId()
+    @objects[a.class][x.id] = x
+    "#{a.class}@#{@router.xmpp.jid}/#{x.id}"
 
-  onRead: (action, clazz, instance, iq) =>
-
-    if not @hasPermission iq.attrs.from, action.type, clazz
-      @router.sendError action, 403, "#{YOUR_NOT_AUTH} to read", iq
-
-    else if not clazz? or not instance? or not @objects[clazz][instance]?
-      @router.sendError action, 404, "The object adressed does not exist", iq
-
-    else if @objects[clazz][instance]?
-
+  onRead: (a) =>
+    if @grant(a) and @classExists(a) and @instanceExists(a)
       res = {}
-      inst = @objects[clazz][instance]
-
-      if action.limits
-        res[k] = v for k,v of inst when k in action.limits and typeof v isnt "function"
+      inst = @objects[a.class][a.instance]
+      if a.limits
+        res[k] = v for k,v of inst when k in a.limits and typeof v isnt "function"
       else
         res[k] = v for k,v of inst when typeof v isnt "function"
-      @router.sendResponse joap.serialize(res, action), iq
+      @router.sendResponse a, res
 
-  onAdd: (action, clazz, instance, iq) =>
+  onAdd: (a) =>
+    if @grant(a) and @isClassAddress(a) and @classExists(a) and @areRequiredAttributes(a)
+      @router.sendResponse a, @createClass(a)
 
-    if not @hasPermission iq.attrs.from, action.type, clazz
-      @router.sendError action, 403, "#{YOUR_NOT_AUTH} to create an instance of the class #{clazz}", iq
+  onEdit: (a) =>
+    if @grant(a) and @instanceExists(a) and @areWritableAttributes(a)
+      inst = @objects[a.class][a.instance]
+      inst[k] = v for k,v of a.attributes
+      @router.sendResponse a
 
-    else if not clazz? or instance?
-      @router.sendError action, 405, "#{iq.attrs.to} is not a class", iq
+  onDelete: (a) =>
+    if @grant(a) and @isInstanceAddress(a) and @instanceExists(a)
+      delete @objects[a.class][a.instance]
+      @router.sendResponse a
 
-    else if not @classes[clazz]?
-      @router.sendError action, 404, "The class '#{clazz}' does not exist.", iq
+  # Public method to override by the main application
+  hasPermission: (action) -> true
 
-    else
-      address = @create clazz, action.attributes
-      if address is false
-        @router.sendError action, 406, "Invalid constructor parameters", iq
-      else
-        @router.sendResponse joap.serialize(address, action), iq
+  grant: (a) ->
+    if not @hasPermission a
+      @router.sendError a, 403, "You are not authorized"
+      false
+    else true
+
+  instanceExists: (a) ->
+    if not @objects[a.class]?[a.instance]?
+      @router.sendError a, 404, "Object '#{a.instance}' does not exits."
+      false
+    else true
+
+  classExists: (a) ->
+    if not @classes[a.class]?
+      @router.sendError a, 404, "Class '#{a.class}' does not exits."
+      false
+    else true
+
+  isClassAddress: (a) ->
+    if not a.class? or a.instance?
+      @router.sendError a, 405, "'#{a.iq.attrs.to}' is not a class"
+      false
+    else true
+
+  isInstanceAddress: (a) ->
+    if not a.class? or not a.instance?
+      @router.sendError a, 405, "'#{a.iq.attrs.to}' is not an instance"
+      false
+    else true
+
+  areRequiredAttributes: (a) ->
+    for r in @classes[a.class].required
+      if not a.attributes?[r]?
+        @router.sendError a, 406, "Invalid constructor parameters"
+        return false
+    true
+
+  areWritableAttributes: (a) ->
+    p = @classes[a.class].protected
+    for k,v of a.attributes
+      if k in p
+        @router.sendError a, 406, "'#{k}' of '#{a.class}' is not a writeable attribute"
+        return false
+    true
 
 exports.Manager = Manager

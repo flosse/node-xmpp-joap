@@ -13,31 +13,34 @@ class Router extends events.EventEmitter
 
       if iq.name is "iq"
 
-        child    = iq.children?[0]
-        to       = iq.attrs.to
-        clazz    = to.split('@')[0]
-        instance = to.split('/')[1]
-        action   = joap.parse child
+        action = joap.parse iq.children?[0]
 
         if action.type?
-          @emit action.type, action, clazz, instance, iq
-          @emit "action", action, clazz, instance, iq
 
-  sendError: (action, code, msg, iq) ->
+          to              = iq.attrs.to
+          action.from     = iq.attrs.from
+          action.class    = to.split('@')[0]
+          action.instance = to.split('/')[1]
+          action.iq       = iq
+
+          @emit action.type, action
+          @emit "action", action
+
+  sendError: (a, code, msg) ->
 
     err = new ltx.Element "iq",
-      id: iq.attrs.id
+      id: a.iq.attrs.id
       type:'error'
-      to: iq.attrs.from
-      from: iq.attrs.to
+      to: a.iq.attrs.from
+      from: a.iq.attrs.to
 
-    if action.type isnt "rpc"
-      if action.type in JOAP_STANZAS
-        err.c(action.type, xmlns: JOAP_NS).up()
+    if a.type isnt "rpc"
+      if a.type in JOAP_STANZAS
+        err.c(a.type, xmlns: JOAP_NS).up()
       err
         .c("error", code: code)
         .t(msg)
-    else if action.type is "rpc"
+    else if a.type is "rpc"
       err
         .c("query", xmlns: RPC_NS)
         .c("methodResponse")
@@ -46,15 +49,13 @@ class Router extends events.EventEmitter
 
     @xmpp.send err
 
-  sendResponse: (data, iq) ->
-
+  sendResponse: (a, data) ->
     res = new ltx.Element "iq",
-      id: iq.attrs.id
+      id: a.iq.attrs.id
       type:'result'
-      to: iq.attrs.from
-      from: iq.attrs.to
-
-    res.cnode data
+      to: a.iq.attrs.from
+      from: a.iq.attrs.to
+    res.cnode joap.serialize(data, a)
     @xmpp.send res
 
 exports.Router = Router
