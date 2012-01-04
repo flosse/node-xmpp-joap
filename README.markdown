@@ -25,8 +25,7 @@ comp = new xmpp.Component
   port      : "8888"
 
 class User
-  constructor: (params) ->
-    { @name, @age } = params
+  constructor: (@name, @age) ->
 
 # create a new manager instance
 mgr = new joap.Manager comp

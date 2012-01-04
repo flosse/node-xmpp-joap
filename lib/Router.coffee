@@ -27,34 +27,17 @@ class Router extends events.EventEmitter
           @emit "action", action
 
   sendError: (a, code, msg) ->
-
-    err = new ltx.Element "iq",
-      id: a.iq.attrs.id
-      type:'error'
-      to: a.iq.attrs.from
+    @xmpp.send new joap.ErrorIq a.type, code, msg,
+      to:   a.iq.attrs.from
       from: a.iq.attrs.to
-
-    if a.type isnt "rpc"
-      if a.type in JOAP_STANZAS
-        err.c(a.type, xmlns: JOAP_NS).up()
-      err
-        .c("error", code: code)
-        .t(msg)
-    else if a.type is "rpc"
-      err
-        .c("query", xmlns: RPC_NS)
-        .c("methodResponse")
-        .c("fault")
-        .cnode(new joap.Value { faultCode: code, faultString: msg })
-
-    @xmpp.send err
+      id:   a.iq.attrs.id
 
   sendResponse: (a, data) ->
     res = new ltx.Element "iq",
-      id: a.iq.attrs.id
-      type:'result'
       to: a.iq.attrs.from
       from: a.iq.attrs.to
+      id: a.iq.attrs.id
+      type:'result'
     res.cnode joap.serialize(data, a)
     @xmpp.send res
 

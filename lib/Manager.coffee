@@ -12,6 +12,10 @@ class Manager extends events.EventEmitter
     @router.on "edit", @onEdit
     @router.on "delete", @onDelete
 
+  @getArgNames: (fn) ->
+    args = fn.toString().match(/function\b[^(]*\(([^)]*)\)/)[1]
+    args.split /\s*,\s*/
+
   addClass: (name, creator, required=[], protected=[]) ->
     if typeof creator is "function" and not @classes[name]?
       @classes[name] = { creator:creator, required:required, protected:protected }
@@ -21,14 +25,15 @@ class Manager extends events.EventEmitter
 
   createClass: (a) ->
     clazz = @classes[a.class]
-    x = new clazz.creator a.attributes
+    argNames = Manager.getArgNames clazz.creator
+    x = new clazz.creator (a.attributes[n] for n in argNames when n isnt "")...
     if not x.id or @objects[a.class][x.id]?
       x.id = joap.uniqueId()
     @objects[a.class][x.id] = x
     "#{a.class}@#{@router.xmpp.jid}/#{x.id}"
 
   onRead: (a) =>
-    if @grant(a) and @classExists(a) and @instanceExists(a)
+    if @grant(a) and @classExists(a) and @instanceExists(a) and @areExistingAttributes(a)
       res = {}
       inst = @objects[a.class][a.instance]
       if a.limits
@@ -63,19 +68,19 @@ class Manager extends events.EventEmitter
 
   instanceExists: (a) ->
     if not @objects[a.class]?[a.instance]?
-      @router.sendError a, 404, "Object '#{a.instance}' does not exits."
+      @router.sendError a, 404, "Object '#{a.instance}' does not exists"
       false
     else true
 
   classExists: (a) ->
     if not @classes[a.class]?
-      @router.sendError a, 404, "Class '#{a.class}' does not exits."
+      @router.sendError a, 404, "Class '#{a.class}' does not exists"
       false
     else true
 
   isClassAddress: (a) ->
     if not a.class? or a.instance?
-      @router.sendError a, 405, "'#{a.iq.attrs.to}' is not a class"
+      @router.sendError a, 405, "'#{a.iq.attrs.to}' isn't a class"
       false
     else true
 
@@ -92,11 +97,19 @@ class Manager extends events.EventEmitter
         return false
     true
 
+  areExistingAttributes: (a) ->
+    if a.limits?
+      inst = @objects[a.class][a.instance]
+      for l in a.limits
+        if inst[l] is undefined
+          @router.sendError a, 406, "Requested attribute '#{l}' doesn't exists"
+          return false
+    true
   areWritableAttributes: (a) ->
     p = @classes[a.class].protected
     for k,v of a.attributes
       if k in p
-        @router.sendError a, 406, "'#{k}' of '#{a.class}' is not a writeable attribute"
+        @router.sendError a, 406, "Attribute '#{k}' of class '#{a.class}' is not writeable"
         return false
     true
 

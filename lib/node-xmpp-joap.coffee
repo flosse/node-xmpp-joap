@@ -8,6 +8,7 @@ exports.Member    = stanza.Member
 exports.Struct    = stanza.Struct
 exports.Array     = stanza.Array
 exports.Value     = stanza.Value
+exports.ErrorIq   = stanza.ErrorIq
 
 Parser = require("./Parser").Parser
 
