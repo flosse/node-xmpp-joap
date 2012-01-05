@@ -1,3 +1,6 @@
+# This program is distributed under the terms of the MIT license.
+# Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+
 ltx     = require "ltx"
 joap    = require "./node-xmpp-joap"
 JOAP_NS = "jabber:iq:joap"
@@ -14,6 +17,22 @@ class Attribute extends KeyVal
 
   constructor: (key, value) ->
     super "attribute", key, value
+
+class AttributeDescription extends ltx.Element
+
+  constructor: (name, type, writable=true, desc) ->
+    super "attributeDescription", {writable: writable.toString()}
+    @c("name")
+      .t(name.toString()).up()
+    .c("type").t(type).up()
+    if desc?
+      @cnode(new Description v, k) for k,v of desc
+
+class Description extends ltx.Element
+
+  constructor: (text="", lang="en-US") ->
+    super "desc", "xml:lang": lang
+    @t(text)
 
 class Member extends KeyVal
 
@@ -59,6 +78,8 @@ class Error extends ltx.Element
     @t msg
 
 exports.Attribute = Attribute
+exports.AttributeDescription = AttributeDescription
+exports.Description = Description
 exports.Member = Member
 exports.Struct = Struct
 exports.Array = Array

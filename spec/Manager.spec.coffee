@@ -9,16 +9,18 @@ describe "Manager", ->
   clientJID = "client@exmaple.tld"
 
   createErrorIq = (type, code, msg, clazz, instance) ->
-    from = "#{clazz or 'User'}@#{compJID}"
-    from += "/#{instance}" if instance?
+    from = compJID
+    from = "#{clazz}@#{from}" if clazz?
+    from += "/#{instance}"    if instance?
     errMsg = new joap.ErrorIq type, code, msg,
       to:   clientJID
       from: from
       id:   "#{type}_id_0"
 
   createRequest = (type, clazz, instance) ->
-    to = "#{clazz or 'User'}@#{compJID}"
-    to += "/#{instance}" if instance?
+    to = compJID
+    to = "#{clazz}@#{to}" if clazz?
+    to += "/#{instance}"  if instance?
     iq = new ltx.Element "iq",
       to: to
       from:clientJID
@@ -55,15 +57,15 @@ describe "Manager", ->
 
   describe "add", ->
 
-    createAddRequest = -> createRequest("add")
+    createAddRequest = (clazz, instance) -> createRequest("add", clazz, instance)
     createAddErrorIq = (code, msg, clazz, instance) -> createErrorIq("add", code, msg, clazz, instance)
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @request = createAddRequest()
+      @request = createAddRequest "User"
 
     it "returns an error if you are not authorized", ->
-      @result = createAddErrorIq '403', "You are not authorized"
+      @result = createAddErrorIq '403', "You are not authorized", "User"
       @mgr.hasPermission = -> false
       run.call @
 
@@ -73,20 +75,20 @@ describe "Manager", ->
       run.call @
 
     it "returns an error if class doesn't exists", ->
-      @result = createAddErrorIq 404, "Class 'User' does not exists"
+      @result = createAddErrorIq 404, "Class 'User' does not exists", "User"
       run.call @
 
     it "returns an error if required attributes are not available", ->
       class User
       @mgr.addClass "User", User, ["name"]
-      @result = createAddErrorIq 406, "Invalid constructor parameters"
+      @result = createAddErrorIq 406, "Invalid constructor parameters", "User"
       run.call @
 
     it "returns an error if required attributes are not correct", ->
       class User
       @mgr.addClass "User", User, ["name"]
       @request.getChild("add").cnode(new joap.Attribute "age", 33)
-      @result = createAddErrorIq 406, "Invalid constructor parameters"
+      @result = createAddErrorIq 406, "Invalid constructor parameters", "User"
       run.call @
 
     it "returns the address of the new instance", ->
@@ -260,7 +262,7 @@ describe "Manager", ->
 
     it "returns an error if address is not an instance", ->
       @request = createRequest "delete"
-      @result = createErrorIq "delete", 405, "'User@#{compJID}' is not an instance"
+      @result = createErrorIq "delete", 405, "'#{compJID}' is not an instance"
       run.call @
 
     it "deletes the specified instance", ->
@@ -274,3 +276,34 @@ describe "Manager", ->
       (expect users.foo).toBeDefined()
       run.call @
       (expect users.foo).toBeUndefined()
+
+  describe "describe", ->
+
+    class User
+      constructor: (@name, @age) ->
+        @id = "foo"
+
+    beforeEach ->
+      @mgr = new joap.Manager xmppComp
+      @mgr.addClass "User", User, ["name"], ["id"]
+      @mgr.createClass {class:"User", attributes:{name: "Markus", age:123 }}
+      @request = createRequest "describe"
+    
+    it "returns the describtion of the object server", ->
+      serverDesc = "This server manages users"
+      @mgr.serverDescription = { "en-US":serverDesc }
+      @mgr.serverAttributes =
+        x: {type: "int", desc: {"en-US": "a magic number"}, writable: false }
+      @result = new ltx.Element "iq",
+        to:clientJID
+        from:compJID
+        id:'describe_id_0'
+        type:'result'
+      @result.c("describe", {xmlns: JOAP_NS})
+        .c("desc", "xml:lang":'en-US').t(serverDesc).up()
+        .c("attributeDescription", writable:'false')
+          .c("name").t("x").up()
+          .c("type").t("int").up()
+          .c("desc","xml:lang":'en-US').t("a magic number").up().up()
+        .c("class").t("User").up()
+      run.call @

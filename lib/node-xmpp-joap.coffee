@@ -1,14 +1,19 @@
+# This program is distributed under the terms of the MIT license.
+# Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+
 stanza = require("./stanza")
 
 exports.Router  = require("./Router").Router
 exports.Manager = require("./Manager").Manager
 
-exports.Attribute = stanza.Attribute
-exports.Member    = stanza.Member
-exports.Struct    = stanza.Struct
-exports.Array     = stanza.Array
-exports.Value     = stanza.Value
-exports.ErrorIq   = stanza.ErrorIq
+exports.Attribute   = stanza.Attribute
+exports.Member      = stanza.Member
+exports.Struct      = stanza.Struct
+exports.Array       = stanza.Array
+exports.Value       = stanza.Value
+exports.ErrorIq     = stanza.ErrorIq
+exports.Description = stanza.Description
+exports.AttributeDescription = stanza.AttributeDescription
 
 Parser = require("./Parser").Parser
 

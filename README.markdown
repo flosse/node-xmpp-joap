@@ -87,5 +87,15 @@ router.on "rpc", (action) ->
 ## Running tests
 
 ```shell
-jasmine-node --coffee --color spec/
+jasmine-node --coffee spec/
 ```
+
+## ToDo's
+
+- search support
+- Jabber RPC support
+- client library
+
+## License
+
+node-xmpp-joap is licensed under the MIT-Licence (see LICENSE.txt)

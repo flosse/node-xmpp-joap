@@ -1,10 +1,9 @@
+# This program is distributed under the terms of the MIT license.
+# Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+
 ltx     = require "ltx"
 events  = require "events"
 joap    = require "./node-xmpp-joap"
-
-JOAP_NS       = "jabber:iq:joap"
-RPC_NS        = "jabber:iq:rpc"
-JOAP_STANZAS  = ["describe", "read","add", "edit", "delete", "search"]
 
 class Router extends events.EventEmitter
 
@@ -18,10 +17,14 @@ class Router extends events.EventEmitter
         if action.type?
 
           to              = iq.attrs.to
-          action.from     = iq.attrs.from
-          action.class    = to.split('@')[0]
-          action.instance = to.split('/')[1]
           action.iq       = iq
+          action.from     = iq.attrs.from
+
+          if to.indexOf('@') >= 0
+            action.class  = to.substr(0, to.indexOf '@')
+
+          if to.indexOf('/') >= 0
+            action.instance = to.substr(to.indexOf('/') + 1)
 
           @emit action.type, action
           @emit "action", action

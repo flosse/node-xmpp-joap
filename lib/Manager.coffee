@@ -1,12 +1,19 @@
+# This program is distributed under the terms of the MIT license.
+# Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+
 events  = require "events"
 joap    = require "node-xmpp-joap"
 
 class Manager extends events.EventEmitter
 
   constructor: (@xmpp) ->
+
     @classes = {}
     @objects = {}
+    @serverDescription={'en-US':"JOAP Server"}
+    @serverAttributes = {}
     @router = new joap.Router @xmpp
+    @router.on "describe", @onDescribe
     @router.on "add", @onAdd
     @router.on "read", @onRead
     @router.on "edit", @onEdit
@@ -56,6 +63,17 @@ class Manager extends events.EventEmitter
     if @grant(a) and @isInstanceAddress(a) and @instanceExists(a)
       delete @objects[a.class][a.instance]
       @router.sendResponse a
+
+  onDescribe: (a) =>
+    data = null
+    if not a.class?
+      data = desc: @serverDescription
+      classes = (k for k,v of @classes)
+      if classes.length > 0
+        data.classes = classes
+      data.attributes = @serverAttributes
+
+    @router.sendResponse a, data
 
   # Public method to override by the main application
   hasPermission: (action) -> true

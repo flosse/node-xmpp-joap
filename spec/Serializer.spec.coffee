@@ -26,11 +26,12 @@ describe "Serializer", ->
 
     it "serializes result attributes", ->
 
-      readAct   = { type: "read"   }
-      addAct    = { type: "add"    }
-      editAct   = { type: "edit"   }
-      delAct    = { type: "delete" }
-      searchAct = { type: "search" }
+      descAct   = { type: "describe" }
+      readAct   = { type: "read"     }
+      addAct    = { type: "add"      }
+      editAct   = { type: "edit"     }
+      delAct    = { type: "delete"   }
+      searchAct = { type: "search"   }
       addr = "Class@component.example.com/instance"
 
       readObj = {a:"foo", b:2}
@@ -47,6 +48,32 @@ describe "Serializer", ->
         "<newAddress>#{addr}</newAddress></edit>"
 
       (expect Serializer.serialize null, delAct).toEqual ltx.parse "<delete xmlns='jabber:iq:joap' />"
+
+      serverDesc =
+        desc:
+          "en-US":"A server"
+          "de-DE":"Ein Server"
+        attributes:
+          foo:
+            writable:true
+            type: "bar"
+            desc:
+              "en-US":"Hello world"
+              "de-DE":"Hallo Welt"
+          bar:
+            writable:false
+            type: "int"
+
+      (expect Serializer.serialize serverDesc, descAct).toEqual ltx.parse "<describe xmlns='jabber:iq:joap' >" +
+        "<desc xml:lang='en-US' >A server</desc>"+
+        "<desc xml:lang='de-DE' >Ein Server</desc>"+
+        "<attributeDescription writable='true'><name>foo</name><type>bar</type>" +
+        "<desc xml:lang='en-US' >Hello world</desc>"+
+        "<desc xml:lang='de-DE' >Hallo Welt</desc>"+
+        "</attributeDescription>"+
+        "<attributeDescription writable='false'><name>bar</name><type>int</type>" +
+        "</attributeDescription>"+
+        "</describe>"
 
       searchResults = ["a", "b", "c"]
       (expect Serializer.serialize searchResults, searchAct).toEqual ltx.parse "<search xmlns='jabber:iq:joap' >" +
