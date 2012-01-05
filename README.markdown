@@ -40,7 +40,43 @@ mgr.hasPermission = (action) ->
     true
   else
     false
+```
 
+#### Persistence
+
+If you want to persist the objects in a database you can simply override the
+methods `saveInstance`, `loadInstance` and `deleteInstance`.
+In this example we use [nStore](https://github.com/creationix/nstore).
+
+```coffeescript
+nStore  = require "nstore"
+
+# create database
+users = nStore.new './data/users.db', (err) ->
+  if err?
+    console.error err
+  else
+
+    # override
+    mgr.saveInstance = (clazz, id, obj, next) ->
+      if clazz is "User"
+        users.save id, obj, next
+      else
+        next new Error "Storage for this class is not available"
+
+    # override
+    mgr.loadInstance = (clazz, id, next) ->
+      if clazz is "User"
+        users.get id, next
+      else
+        next new Error "Storage for this class is not available"
+
+    # override
+    mgr.deleteInstance = (clazz, id, next) ->
+      if clazz is "User"
+        users.remove id, next
+      else
+        next new Error "Storage for this class is not available"
 ```
 
 ### Router

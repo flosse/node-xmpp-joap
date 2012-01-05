@@ -3,13 +3,13 @@
 
 events  = require "events"
 joap    = require "node-xmpp-joap"
+ltx     = require "ltx"
 
 class Manager extends events.EventEmitter
 
   constructor: (@xmpp) ->
 
     @classes = {}
-    @objects = {}
     @serverDescription={'en-US':"JOAP Server"}
     @serverAttributes = {}
     @router = new joap.Router @xmpp
@@ -18,74 +18,135 @@ class Manager extends events.EventEmitter
     @router.on "read", @onRead
     @router.on "edit", @onEdit
     @router.on "delete", @onDelete
+    @objects = {}
 
   @getArgNames: (fn) ->
     args = fn.toString().match(/function\b[^(]*\(([^)]*)\)/)[1]
     args.split /\s*,\s*/
 
-  addClass: (name, creator, required=[], protected=[]) ->
-    if typeof creator is "function" and not @classes[name]?
-      @classes[name] = { creator:creator, required:required, protected:protected }
-      @objects[name] = {}
-      true
-    else false
+  # override if you want to manipule the request
+  before:
 
-  # override if you want to manipule the creation of instances
-  beforeObjectCreation: (a, callback) -> callback a
+    add: (a, callback) -> callback null, a
+    # override if you want to manipule the reading of instances
+    read: (a, callback) -> callback null, a
 
-  # override if you want to manipule the deletion of instances
-  beforeObjectDeletion: (a, callback) -> callback a
+    # override if you want to manipule the editing of instances
+    edit: (a, callback) -> callback null, a
 
-  createClass: (action, cb) ->
-    clazz = @classes[action.class]
-    argNames = Manager.getArgNames clazz.creator
-    @beforeObjectCreation action, (a) =>
-      x = new clazz.creator (a.attributes[n] for n in argNames when n isnt "")...
-      if not x.id or @objects[a.class][x.id]?
-        x.id = joap.uniqueId()
-      @objects[a.class][x.id] = x
-      cb null, "#{a.class}@#{@router.xmpp.jid}/#{x.id}"
+    # override if you want to manipule the deletion of instances
+    delete: (a, callback) -> callback null, a
 
-  onRead: (a) =>
-    if @grant(a) and @classExists(a) and @instanceExists(a) and @areExistingAttributes(a)
-      res = {}
-      inst = @objects[a.class][a.instance]
-      if a.limits
-        res[k] = v for k,v of inst when k in a.limits and typeof v isnt "function"
-      else
-        res[k] = v for k,v of inst when typeof v isnt "function"
-      @router.sendResponse a, res
+    # override if you want to manipule the description of instances
+    describe: (a, callback) -> callback null, a
 
-  onAdd: (a) =>
-    if @grant(a) and @isClassAddress(a) and @classExists(a) and @areRequiredAttributes(a)
-      @createClass a, (err, address) =>
-        @router.sendResponse a, address
+  # override if you want to use a database
+  saveInstance: (clazz, id, obj, next) ->
+    @objects[clazz][id] = obj
+    next null
 
-  onEdit: (a) =>
-    if @grant(a) and @instanceExists(a) and @areWritableAttributes(a)
-      inst = @objects[a.class][a.instance]
-      inst[k] = v for k,v of a.attributes
-      @router.sendResponse a
+  # override if you want to use a database
+  loadInstance: (clazz, id, next) -> next null, @objects[clazz][id]
 
-  onDelete: (a) =>
-    if @grant(a) and @isInstanceAddress(a) and @instanceExists(a)
-      @beforeObjectDeletion a, (action) =>
-        delete @objects[action.class][action.instance]
-        @router.sendResponse action
-
-  onDescribe: (a) =>
-    data = null
-    if not a.class?
-      data = desc: @serverDescription
-      classes = (k for k,v of @classes)
-      if classes.length > 0
-        data.classes = classes
-      data.attributes = @serverAttributes
-
-    @router.sendResponse a, data
+  # override if you want to use a database
+  deleteInstance: (clazz, id, next) ->
+    delete @objects[clazz][id]
+    next null
 
   # Public method to override by the main application
   hasPermission: (action) -> true
+
+  addClass: (name, creator, required=[], protected=[], objects={}) ->
+    if typeof creator is "function" and not @classes[name]?
+      @classes[name] = { creator:creator, required:required, protected:protected }
+      @objects[name] = objects
+      true
+    else false
+
+  createInstance: (a, next) ->
+    clazz = @classes[a.class]
+    argNames = Manager.getArgNames clazz.creator
+    x = new clazz.creator (a.attributes[n] for n in argNames when n isnt "")...
+    x.id = joap.uniqueId() if not x.id
+    @saveInstance a.class, x.id, x, (err) =>
+      next err, "#{a.class}@#{@router.xmpp.jid}/#{x.id}"
+
+  onRead: (a) =>
+    if @grant(a) and @classExists(a)
+      @instanceExists a, (err, exists) =>
+        if exists and not err? and @areExistingAttributes(a)
+          @before.read a, (err, a) =>
+            if err?
+              @sendInternalServerError a
+            else
+              res = {}
+              @loadInstance a.class, a.instance, (err, inst) =>
+                if a.limits
+                  res[k] = v for k,v of inst when k in a.limits and typeof v isnt "function"
+                else
+                  res[k] = v for k,v of inst when typeof v isnt "function"
+                @router.sendResponse a, res
+
+  onAdd: (a) =>
+    if @grant(a) and @isClassAddress(a) and @classExists(a) and @areRequiredAttributes(a)
+      @before.add a, (err, a) =>
+        if err?
+          @sendInternalServerError a
+        else
+          @createInstance a, (err, address) =>
+            if err?
+              @sendInternalServerError a
+            else
+              @router.sendResponse a, address
+
+  onEdit: (a) =>
+    if @grant(a)
+      @instanceExists a, (err, exists) =>
+        if exists and not err? and @areWritableAttributes(a)
+            @before.edit a, (err, a) =>
+              if err?
+                @sendInternalServerError a
+              else
+                @loadInstance a.class, a.instance, (err, inst) =>
+                  if err?
+                    @sendInternalServerError a
+                  else
+                    inst[k] = v for k,v of a.attributes
+                    @saveInstance a.class, a.instance, inst, (err) =>
+                      if err?
+                        @sendInternalServerError a
+                      else
+                        @router.sendResponse a
+
+  onDelete: (a) =>
+    if @grant(a) and @isInstanceAddress(a)
+      @instanceExists a, (err, exists) =>
+        if exists and not err?
+          @before.delete a, (err, a) =>
+            if err?
+              @sendInternalServerError a
+            else
+              @deleteInstance a.class, a.instance, (err) =>
+                if err?
+                  @sendInternalServerError a
+                else
+                  @router.sendResponse a
+
+  onDescribe: (a) =>
+    @before.describe a, (err, a) =>
+      if err?
+        @sendInternalServerError a
+      else
+        data = null
+        if not a.class?
+          data = desc: @serverDescription
+          classes = (k for k,v of @classes)
+          if classes.length > 0
+            data.classes = classes
+          data.attributes = @serverAttributes
+
+        @router.sendResponse a, data
+
 
   grant: (a) ->
     if not @hasPermission a
@@ -93,11 +154,12 @@ class Manager extends events.EventEmitter
       false
     else true
 
-  instanceExists: (a) ->
-    if not @objects[a.class]?[a.instance]?
-      @router.sendError a, 404, "Object '#{a.instance}' does not exists"
-      false
-    else true
+  instanceExists: (a, next) ->
+    @loadInstance a.class, a.instance, (err, inst) =>
+      if not inst? or err?
+        @router.sendError a, 404, "Object '#{a.instance}' does not exists"
+        next err, false
+      else next err, true
 
   classExists: (a) ->
     if not @classes[a.class]?
@@ -139,5 +201,17 @@ class Manager extends events.EventEmitter
         @router.sendError a, 406, "Attribute '#{k}' of class '#{a.class}' is not writeable"
         return false
     true
+
+  sendInternalServerError: (a) ->
+
+    err = new ltx.Element "iq",
+      to:   a.iq.attrs.from
+      from: a.iq.attrs.to
+      id:   a.iq.attrs.id
+      type: 'error'
+    err.c("error", type:'cancel')
+      .c("internal-server-error", xmlns:'urn:ietf:params:xml:ns:xmpp-stanzas')
+
+    @router.send err
 
 exports.Manager = Manager

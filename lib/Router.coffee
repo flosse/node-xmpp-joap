@@ -30,7 +30,7 @@ class Router extends events.EventEmitter
           @emit "action", action
 
   sendError: (a, code, msg) ->
-    @xmpp.send new joap.ErrorIq a.type, code, msg,
+    @send new joap.ErrorIq a.type, code, msg,
       to:   a.iq.attrs.from
       from: a.iq.attrs.to
       id:   a.iq.attrs.id
@@ -42,6 +42,8 @@ class Router extends events.EventEmitter
       id: a.iq.attrs.id
       type:'result'
     res.cnode joap.serialize(data, a)
-    @xmpp.send res
+    @send res
+
+  send: (stanza) => @xmpp.send stanza
 
 exports.Router = Router

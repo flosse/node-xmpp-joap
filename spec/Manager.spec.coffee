@@ -157,7 +157,7 @@ describe "Manager", ->
         constructor: ->
           @id = "foo"
       @mgr.addClass "User", User
-      @mgr.createClass {class:"User"}, =>
+      @mgr.createInstance {class:"User"}, =>
         @request.getChild("read").c("name").t("age")
         @result = createErrorIq "read", 406, "Requested attribute 'age' doesn't exists", "User", "foo"
         run.call @
@@ -168,7 +168,7 @@ describe "Manager", ->
           @id = "foo"
           @name = "Markus"
       @mgr.addClass "User", User
-      @mgr.createClass {class:"User"}, =>
+      @mgr.createInstance {class:"User"}, =>
         @result = new ltx.Element "iq",
           to:clientJID
           from:"User@#{compJID}/foo"
@@ -185,7 +185,7 @@ describe "Manager", ->
           @id = "foo"
           @name = "Markus"
       @mgr.addClass "User", User
-      @mgr.createClass {class:"User"}, =>
+      @mgr.createInstance {class:"User"}, =>
         @request.getChild("read").c("name").t("name")
         @result = new ltx.Element "iq",
           to:clientJID
