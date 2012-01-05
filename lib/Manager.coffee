@@ -33,6 +33,9 @@ class Manager extends events.EventEmitter
   # override if you want to manipule the creation of instances
   beforeObjectCreation: (a, callback) -> callback a
 
+  # override if you want to manipule the deletion of instances
+  beforeObjectDeletion: (a, callback) -> callback a
+
   createClass: (action, cb) ->
     clazz = @classes[action.class]
     argNames = Manager.getArgNames clazz.creator
@@ -66,8 +69,9 @@ class Manager extends events.EventEmitter
 
   onDelete: (a) =>
     if @grant(a) and @isInstanceAddress(a) and @instanceExists(a)
-      delete @objects[a.class][a.instance]
-      @router.sendResponse a
+      @beforeObjectDeletion a, (action) =>
+        delete @objects[action.class][action.instance]
+        @router.sendResponse action
 
   onDescribe: (a) =>
     data = null
