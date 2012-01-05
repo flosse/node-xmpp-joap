@@ -30,14 +30,18 @@ class Manager extends events.EventEmitter
       true
     else false
 
-  createClass: (a) ->
-    clazz = @classes[a.class]
+  # override if you want to manipule the creation of instances
+  beforeObjectCreation: (a, callback) -> callback a
+
+  createClass: (action, cb) ->
+    clazz = @classes[action.class]
     argNames = Manager.getArgNames clazz.creator
-    x = new clazz.creator (a.attributes[n] for n in argNames when n isnt "")...
-    if not x.id or @objects[a.class][x.id]?
-      x.id = joap.uniqueId()
-    @objects[a.class][x.id] = x
-    "#{a.class}@#{@router.xmpp.jid}/#{x.id}"
+    @beforeObjectCreation action, (a) =>
+      x = new clazz.creator (a.attributes[n] for n in argNames when n isnt "")...
+      if not x.id or @objects[a.class][x.id]?
+        x.id = joap.uniqueId()
+      @objects[a.class][x.id] = x
+      cb null, "#{a.class}@#{@router.xmpp.jid}/#{x.id}"
 
   onRead: (a) =>
     if @grant(a) and @classExists(a) and @instanceExists(a) and @areExistingAttributes(a)
@@ -51,7 +55,8 @@ class Manager extends events.EventEmitter
 
   onAdd: (a) =>
     if @grant(a) and @isClassAddress(a) and @classExists(a) and @areRequiredAttributes(a)
-      @router.sendResponse a, @createClass(a)
+      @createClass a, (err, address) =>
+        @router.sendResponse a, address
 
   onEdit: (a) =>
     if @grant(a) and @instanceExists(a) and @areWritableAttributes(a)

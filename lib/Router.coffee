@@ -14,7 +14,7 @@ class Router extends events.EventEmitter
 
         action = joap.parse iq.children?[0]
 
-        if action.type?
+        if action?.type?
 
           to              = iq.attrs.to
           action.iq       = iq

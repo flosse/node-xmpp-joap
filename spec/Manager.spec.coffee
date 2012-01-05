@@ -157,10 +157,10 @@ describe "Manager", ->
         constructor: ->
           @id = "foo"
       @mgr.addClass "User", User
-      @mgr.createClass {class:"User"}
-      @request.getChild("read").c("name").t("age")
-      @result = createErrorIq "read", 406, "Requested attribute 'age' doesn't exists", "User", "foo"
-      run.call @
+      @mgr.createClass {class:"User"}, =>
+        @request.getChild("read").c("name").t("age")
+        @result = createErrorIq "read", 406, "Requested attribute 'age' doesn't exists", "User", "foo"
+        run.call @
 
     it "returns all attributes if nothing was specified", ->
       class User
@@ -168,16 +168,16 @@ describe "Manager", ->
           @id = "foo"
           @name = "Markus"
       @mgr.addClass "User", User
-      @mgr.createClass {class:"User"}
-      @result = new ltx.Element "iq",
-        to:clientJID
-        from:"User@#{compJID}/foo"
-        id:'read_id_0'
-        type:'result'
-      @result.c("read", {xmlns: JOAP_NS})
-        .cnode(new joap.Attribute "id", "foo").up()
-        .cnode(new joap.Attribute "name", "Markus")
-      run.call @
+      @mgr.createClass {class:"User"}, =>
+        @result = new ltx.Element "iq",
+          to:clientJID
+          from:"User@#{compJID}/foo"
+          id:'read_id_0'
+          type:'result'
+        @result.c("read", {xmlns: JOAP_NS})
+          .cnode(new joap.Attribute "id", "foo").up()
+          .cnode(new joap.Attribute "name", "Markus")
+        run.call @
 
     it "returns only the specified attributes", ->
       class User
@@ -185,16 +185,16 @@ describe "Manager", ->
           @id = "foo"
           @name = "Markus"
       @mgr.addClass "User", User
-      @mgr.createClass {class:"User"}
-      @request.getChild("read").c("name").t("name")
-      @result = new ltx.Element "iq",
-        to:clientJID
-        from:"User@#{compJID}/foo"
-        id:'read_id_0'
-        type:'result'
-      @result.c("read", {xmlns: JOAP_NS})
-        .cnode(new joap.Attribute "name", "Markus")
-      run.call @
+      @mgr.createClass {class:"User"}, =>
+        @request.getChild("read").c("name").t("name")
+        @result = new ltx.Element "iq",
+          to:clientJID
+          from:"User@#{compJID}/foo"
+          id:'read_id_0'
+          type:'result'
+        @result.c("read", {xmlns: JOAP_NS})
+          .cnode(new joap.Attribute "name", "Markus")
+        run.call @
 
   describe "edit", ->
 
@@ -205,7 +205,7 @@ describe "Manager", ->
     beforeEach ->
       @mgr = new joap.Manager xmppComp
       @mgr.addClass "User", User, ["name"], ["id"]
-      @mgr.createClass {class:"User", attributes:{name: "Markus", age:123 }}
+      @mgr.objects.User.foo = new User "Markus", 123
       @request = createRequest "edit", "User", "foo"
 
     it "returns an error if you are not authorized", ->
@@ -247,7 +247,7 @@ describe "Manager", ->
     beforeEach ->
       @mgr = new joap.Manager xmppComp
       @mgr.addClass "User", User, ["name"], ["id"]
-      @mgr.createClass {class:"User", attributes:{name: "Markus", age:123 }}
+      @mgr.objects.User.foo = new User "Markus", 123
       @request = createRequest "delete", "User", "foo"
 
     it "returns an error if you are not authorized", ->
@@ -286,9 +286,9 @@ describe "Manager", ->
     beforeEach ->
       @mgr = new joap.Manager xmppComp
       @mgr.addClass "User", User, ["name"], ["id"]
-      @mgr.createClass {class:"User", attributes:{name: "Markus", age:123 }}
+      @mgr.objects.User.foo = new User "Markus", 123
       @request = createRequest "describe"
-    
+
     it "returns the describtion of the object server", ->
       serverDesc = "This server manages users"
       @mgr.serverDescription = { "en-US":serverDesc }
