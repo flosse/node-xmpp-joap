@@ -53,6 +53,7 @@ nStore  = require "nstore"
 
 # create database
 users = nStore.new './data/users.db', (err) ->
+
   if err?
     console.error err
   else
@@ -68,6 +69,16 @@ users = nStore.new './data/users.db', (err) ->
     mgr.loadInstance = (clazz, id, next) ->
       if clazz is "User"
         users.get id, next
+      else
+        next new Error "Storage for this class is not available"
+
+    # override
+    mgr.queryInstances = (clazz, attrs, next) ->
+      if clazz is "User"
+        next = attrs; attrs = null if typeof attrs is "function"
+        if attrs?
+          @users.find attrs, (err, res) -> next err, (id for id of res)
+        else @users.all (err, res) -> next err, (id for id of res)
       else
         next new Error "Storage for this class is not available"
 
@@ -114,6 +125,8 @@ router.on "add", (action) ->
 
   # ...
 
+router.on "search", (action) ->
+
 router.on "rpc", (action) ->
   console.log "calling #{action.method} with:"
   for param in actions.params
@@ -122,15 +135,21 @@ router.on "rpc", (action) ->
 
 ## Running tests
 
+[jasmine-node](https://github.com/mhevery/jasmine-node)
+is required (`npm install -g jasmine-node`) for running the tests.
+
 ```shell
-jasmine-node --coffee spec/
+cake test
 ```
+
+## JOAP client implementations
+
+- [strophe.js plugin](https://github.com/metajack/strophejs-plugins/tree/master/joap)
 
 ## ToDo's
 
-- search support
+- describe support
 - Jabber RPC support
-- client library
 
 ## License
 

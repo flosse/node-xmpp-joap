@@ -26,8 +26,11 @@ class Router extends events.EventEmitter
           if to.indexOf('/') >= 0
             action.instance = to.substr(to.indexOf('/') + 1)
 
-          @emit action.type, action
-          @emit "action", action
+          if typeof action.type is "string" and action.type.trim() isnt ""
+            @emit action.type, action
+            @emit "action", action
+          else
+            @sendError action, 406, "stanza #{action.type} is not supported"
 
   sendError: (a, code, msg) ->
     @send new joap.ErrorIq a.type, code, msg,

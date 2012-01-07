@@ -12,12 +12,14 @@ class Manager extends events.EventEmitter
     @classes = {}
     @serverDescription={'en-US':"JOAP Server"}
     @serverAttributes = {}
+    @serverMethods = {}
     @router = new joap.Router @xmpp
     @router.on "describe", @onDescribe
     @router.on "add", @onAdd
     @router.on "read", @onRead
     @router.on "edit", @onEdit
     @router.on "delete", @onDelete
+    @router.on "search", @onSearch
     @objects = {}
 
   @getArgNames: (fn) ->
@@ -40,6 +42,9 @@ class Manager extends events.EventEmitter
     # override if you want to manipule the description of instances
     describe: (a, callback) -> callback null, a
 
+    # override if you want to manipule the search of instances
+    search: (a, callback) -> callback null, a
+
   # override if you want to use a database
   saveInstance: (clazz, id, obj, next) ->
     @objects[clazz][id] = obj
@@ -47,6 +52,19 @@ class Manager extends events.EventEmitter
 
   # override if you want to use a database
   loadInstance: (clazz, id, next) -> next null, @objects[clazz][id]
+
+  # override if you want to use a database
+  queryInstances: (clazz, attrs, next) ->
+    if typeof attrs is "function"
+      next = attrs
+      attrs = null
+    if attrs?
+      items = []
+      for id, o of @objects[clazz]
+        items.push id for k,v of attrs when o[k] is v
+      next null, items
+    else
+      next null, (k for k,v of @objects[clazz])
 
   # override if you want to use a database
   deleteInstance: (clazz, id, next) ->
@@ -69,7 +87,14 @@ class Manager extends events.EventEmitter
     x = new clazz.creator (a.attributes[n] for n in argNames when n isnt "")...
     x.id = joap.uniqueId() if not x.id
     @saveInstance a.class, x.id, x, (err) =>
-      next err, "#{a.class}@#{@router.xmpp.jid}/#{x.id}"
+      next err, @getAddress a.class, x.id
+
+  getAddress: (clazz, instance) ->
+    addr = ""
+    addr += "#{clazz}@" if clazz if typeof clazz is "string"
+    addr += @router.xmpp.jid
+    addr += "/#{instance}" if typeof instance is "string"
+    addr
 
   onRead: (a) =>
     if @grant(a) and @classExists(a)
@@ -101,6 +126,7 @@ class Manager extends events.EventEmitter
 
   onEdit: (a) =>
     if @grant(a)
+      #TODO: Is it possible to edit the server attributes?
       @instanceExists a, (err, exists) =>
         if exists and not err? and @areWritableAttributes(a)
             @before.edit a, (err, a) =>
@@ -133,20 +159,41 @@ class Manager extends events.EventEmitter
                   @router.sendResponse a
 
   onDescribe: (a) =>
-    @before.describe a, (err, a) =>
-      if err?
-        @sendInternalServerError a
-      else
-        data = null
-        if not a.class?
-          data = desc: @serverDescription
-          classes = (k for k,v of @classes)
-          if classes.length > 0
-            data.classes = classes
-          data.attributes = @serverAttributes
+    if @grant(a)
+      @before.describe a, (err, a) =>
+        if err?
+          @sendInternalServerError a
+        else
+          data = null
+          if not a.class?
+            data = desc: @serverDescription
+            data.attributes = @serverAttributes
+            #TODO: Implement class descriptions
+            # data.methods = @getMethodDescriptions @serverMethods
+            classes = (k for k,v of @classes)
+            data.classes = classes if classes.length > 0
+            @router.sendResponse a, data
 
-        @router.sendResponse a, data
+          #TODO: Implement class descriptions
+          # else if a.class? and not a.instance?
 
+          #TODO: Implement object descriptions
+          # else if a.class? and a.instance?
+
+          else
+            @sendInternalServerError a
+
+  onSearch: (a) =>
+    if @grant(a) and @isClassAddress(a) and @classExists(a)
+      @before.search a, (err, a) =>
+        if err?
+          @sendInternalServerError a
+        else
+          @queryInstances a.class, a.attributes, (err, items) =>
+            if err? or not items?
+              @sendInternalServerError a
+            else
+              @router.sendResponse a, (@getAddress a.class, id for id in items)
 
   grant: (a) ->
     if not @hasPermission a
