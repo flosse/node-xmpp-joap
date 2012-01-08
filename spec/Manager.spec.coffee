@@ -63,6 +63,9 @@ describe "Manager", ->
     beforeEach ->
       @mgr = new joap.Manager xmppComp
       @request = createAddRequest "User"
+      class User
+        constructor: (@name, @age)-> @id = "foo"
+      @mgr.addClass "User", User, ["name"]
 
     it "returns an error if you are not authorized", ->
       @result = createAddErrorIq '403', "You are not authorized", "User"
@@ -75,31 +78,23 @@ describe "Manager", ->
       run.call @
 
     it "returns an error if class doesn't exists", ->
-      @result = createAddErrorIq 404, "Class 'User' does not exists", "User"
+      @result = createAddErrorIq 404, "Class 'Sun' does not exists", "Sun"
+      @request = createAddRequest "Sun"
       run.call @
 
     it "returns an error if required attributes are not available", ->
-      class User
-      @mgr.addClass "User", User, ["name"]
       @result = createAddErrorIq 406, "Invalid constructor parameters", "User"
       run.call @
 
     it "returns an error if required attributes are not correct", ->
-      class User
-      @mgr.addClass "User", User, ["name"]
       @request.getChild("add").cnode(new joap.Attribute "age", 33)
       @result = createAddErrorIq 406, "Invalid constructor parameters", "User"
       run.call @
 
     it "returns the address of the new instance", ->
-      class User
-        constructor: (@name, @age)->
-          @id = "foo"
-      @mgr.addClass "User", User, ["name"]
       @request.getChild("add")
         .cnode(new joap.Attribute "name", "Markus").up()
         .cnode(new joap.Attribute "age", 99).up()
-      @result = createAddRequest()
       @result = new ltx.Element "iq",
         to:clientJID
         from:"User@#{compJID}"
@@ -113,14 +108,9 @@ describe "Manager", ->
       (expect instance.age).toEqual 99
 
     it "takes care of the attribute names", ->
-      class User
-        constructor: (@name, @age)->
-          @id = "foo"
-      @mgr.addClass "User", User, ["name"]
       @request.getChild("add")
         .cnode(new joap.Attribute "age", 99).up()
         .cnode(new joap.Attribute "name", "Markus").up()
-      @result = createAddRequest()
       @result = new ltx.Element "iq",
         to:clientJID
         from:"User@#{compJID}"
@@ -131,6 +121,34 @@ describe "Manager", ->
       instance = @mgr.objects.User.foo
       (expect instance.name).toEqual "Markus"
       (expect instance.age).toEqual 99
+
+    it "creates a new ID", ->
+      class Sun
+      @mgr.addClass "Sun", Sun
+      @request = createAddRequest "Sun"
+      spy = jasmine.createSpy "spy"
+      xmppClient.onData = (data) =>
+        id = data.getChild("add").getChildText("newAddress").split('/')[1]
+        (expect id).toNotEqual "foo"
+        (expect id).toNotEqual ""
+        spy()
+      xmppClient.send @request
+      (expect spy).toHaveBeenCalled()
+
+    it "preserve an ID", ->
+      class Sun
+        constructor: (@id)->
+      @mgr.addClass "Sun", Sun
+      @request = createAddRequest "Sun"
+      @request.getChild("add")
+        .cnode(new joap.Attribute "id", 99.3)
+      spy = jasmine.createSpy "spy"
+      xmppClient.onData = (data) =>
+        id = data.getChild("add").getChildText("newAddress").split('/')[1]
+        (expect id).toEqual '99.3'
+        spy()
+      xmppClient.send @request
+      (expect spy).toHaveBeenCalled()
 
   describe "read", ->
 

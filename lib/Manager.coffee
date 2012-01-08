@@ -93,7 +93,7 @@ class Manager extends events.EventEmitter
     addr = ""
     addr += "#{clazz}@" if clazz if typeof clazz is "string"
     addr += @router.xmpp.jid
-    addr += "/#{instance}" if typeof instance is "string"
+    addr += "/#{instance}" if (typeof(instance) in ["string", "number"])
     addr
 
   onRead: (a) =>

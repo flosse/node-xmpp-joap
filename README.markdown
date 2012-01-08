@@ -75,7 +75,7 @@ users = nStore.new './data/users.db', (err) ->
     # override
     mgr.queryInstances = (clazz, attrs, next) ->
       if clazz is "User"
-        next = attrs; attrs = null if typeof attrs is "function"
+        (next = attrs; attrs = null) if typeof attrs is "function"
         if attrs?
           @users.find attrs, (err, res) -> next err, (id for id of res)
         else @users.all (err, res) -> next err, (id for id of res)
