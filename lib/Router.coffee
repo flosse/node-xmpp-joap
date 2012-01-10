@@ -17,6 +17,7 @@ class Router extends events.EventEmitter
         if action?.type?
 
           to              = iq.attrs.to
+          action.to       = to
           action.iq       = iq
           action.from     = iq.attrs.from
 
