@@ -7,13 +7,13 @@ ltx     = require "ltx"
 
 class Manager extends events.EventEmitter
 
-  constructor: (@xmpp) ->
+  constructor: (@xmpp, opts) ->
 
     @classes = {}
     @serverDescription={'en-US':"JOAP Server"}
     @serverAttributes = {}
     @serverMethods = {}
-    @router = new joap.Router @xmpp
+    @router = new joap.Router @xmpp, opts
     @router.on "describe", @onDescribe
     @router.on "add", @onAdd
     @router.on "read", @onRead

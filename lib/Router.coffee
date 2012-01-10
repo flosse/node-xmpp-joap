@@ -3,29 +3,29 @@
 
 ltx     = require "ltx"
 events  = require "events"
+JID     = require("node-xmpp").JID
 joap    = require "./node-xmpp-joap"
 
 class Router extends events.EventEmitter
 
-  constructor: (@xmpp) ->
+  constructor: (@xmpp, opts={}) ->
+
     @xmpp.on "stanza", (iq) =>
 
-      if iq.name is "iq"
+      to = new JID iq.attrs.to
+      go = not (opts.checkAddress and to.domain isnt @xmpp.jid.domain)
+
+      if iq.name is "iq" and go
 
         action = joap.parse iq.children?[0]
 
         if action?.type?
 
-          to              = iq.attrs.to
           action.to       = to
           action.iq       = iq
-          action.from     = iq.attrs.from
-
-          if to.indexOf('@') >= 0
-            action.class  = to.substr(0, to.indexOf '@')
-
-          if to.indexOf('/') >= 0
-            action.instance = to.substr(to.indexOf('/') + 1)
+          action.from     = new JID iq.attrs.from
+          action.class    = to.user
+          action.instance = to.resource
 
           if typeof action.type is "string" and action.type.trim() isnt ""
             @emit action.type, action
