@@ -35,8 +35,8 @@ mgr.addClass "User", User, ["name", "age"], ["name"]
 
 # implement the ACL by overriding the method
 mgr.hasPermission = (action, next) ->
-  if myACLRules(action) then next()
-  else next false
+  if myACLRules(action) then next null, action
+  else next (new joap.Error "You are not allowed to do that :-P"), 403
 ```
 
 #### Persistence
@@ -56,35 +56,35 @@ users = nStore.new './data/users.db', (err) ->
   else
 
     # override
-    mgr.saveInstance = (clazz, id, obj, next) ->
-      if clazz is "User"
-        users.save id, obj, next
+    mgr.saveInstance = (action, obj, next) ->
+      if action.class is "User"
+        users.save obj.id, obj, (err) -> next err, action
       else
-        next new Error "Storage for this class is not available"
+        next (new Error "Storage for this class is not available"), a
 
     # override
-    mgr.loadInstance = (clazz, id, next) ->
-      if clazz is "User"
-        users.get id, next
+    mgr.loadInstance = (action, next) ->
+      if action.class is "User"
+        users.get id, (err, inst) -> next err, action, inst
       else
-        next new Error "Storage for this class is not available"
+        next (new Error "Storage for this class is not available"), a
 
     # override
-    mgr.queryInstances = (clazz, attrs, next) ->
-      if clazz is "User"
-        (next = attrs; attrs = null) if typeof attrs is "function"
-        if attrs?
-          @users.find attrs, (err, res) -> next err, (id for id of res)
-        else @users.all (err, res) -> next err, (id for id of res)
+    mgr.queryInstances = (a, next) ->
+      if a.class is "User"
+        if a.attributess?
+          @users.find a.attributes, (err, res) -> next err, a, (id for id of res)
+        else
+          @users.all (err, res) -> next err, a, (id for id of res)
       else
-        next new Error "Storage for this class is not available"
+        next (new Error "Storage for this class is not available"), a
 
     # override
-    mgr.deleteInstance = (clazz, id, next) ->
-      if clazz is "User"
-        users.remove id, next
+    mgr.deleteInstance = (a, next) ->
+      if a.class is "User"
+        users.remove id, (err) -> next err, a
       else
-        next new Error "Storage for this class is not available"
+        next (new Error "Storage for this class is not available"), a
 ```
 
 ### Router
@@ -118,7 +118,7 @@ router.on "add", (action) ->
   console.log "add iq received"
 
   if not classes[action.class]?
-    router.sendError "add", 404, "The class '#{action.class}' does not exists."
+    router.sendError (new joap.Error "'#{action.class}' does't exists.", 404), action
 
   # ...
 
