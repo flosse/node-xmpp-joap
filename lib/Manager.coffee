@@ -91,12 +91,12 @@ class Manager extends events.EventEmitter
     a.instance = x.id
     next null, a, x
 
-  getAddress: (a, next) =>
+  getAddress: (clazz, instance) =>
     addr = ""
-    addr += "#{a.class}@" if (typeof a.class in ["string", "number"])
+    addr += "#{clazz}@" if (typeof clazz in ["string", "number"])
     addr += @router.xmpp.jid
-    addr += "/#{a.instance}" if (typeof(a.instance) in ["string", "number"])
-    next null, a, addr
+    addr += "/#{instance}" if (typeof(instance) in ["string", "number"])
+    addr
 
   onRead: (a) =>
     async.waterfall [
@@ -127,7 +127,7 @@ class Manager extends events.EventEmitter
       @before.add
       @createInstance
       @saveInstance
-      @getAddress
+      (a, next) => next null, a, @getAddress a.class, a.instance
       @sendResponse
     ], (err) => @sendError err, a
 
@@ -178,7 +178,9 @@ class Manager extends events.EventEmitter
       @classExists
       @before.search
       @queryInstances
-      (a, items, next) -> next null, a, ((@getAddress a.class, id for id in items) if items?)
+      (a, items, next) =>
+        addresses = (@getAddress a.class, id for id in items) if items?
+        next null, a, addresses
       @sendResponse
     ], (err) => @sendError err, a
 
