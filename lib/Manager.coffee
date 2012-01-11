@@ -8,13 +8,13 @@ async   = require "async"
 
 class Manager extends events.EventEmitter
 
-  constructor: (@xmpp, opts) ->
+  constructor: (@xmpp) ->
 
     @classes = {}
     @serverDescription={'en-US':"JOAP Server"}
     @serverAttributes = {}
     @serverMethods = {}
-    @router = new joap.Router @xmpp, opts
+    @router = new joap.Router @xmpp
     @router.on "describe", @onDescribe
     @router.on "add",      @onAdd
     @router.on "read",     @onRead

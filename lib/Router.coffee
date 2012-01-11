@@ -8,16 +8,15 @@ joap    = require "./node-xmpp-joap"
 
 class Router extends events.EventEmitter
 
-  constructor: (@xmpp, opts={}) ->
+  constructor: (@xmpp) ->
 
     @xmpp.on "stanza", (iq) =>
 
-      to = new JID iq.attrs.to
-      go = not (opts.checkAddress and to.domain isnt @xmpp.jid.domain)
-
-      if iq.name is "iq" and go
+      if iq.name is "iq"
 
         action = joap.parse iq.children?[0]
+
+        to = new JID iq.attrs.to
 
         if action?.type?
 
