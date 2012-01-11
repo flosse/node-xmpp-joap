@@ -75,7 +75,7 @@ class ErrorIq extends ltx.Element
 class Error extends ltx.Element
   constructor: (code, msg) ->
     super "error", {code:code}
-    @t msg
+    @t msg if msg?
 
 exports.Attribute = Attribute
 exports.AttributeDescription = AttributeDescription

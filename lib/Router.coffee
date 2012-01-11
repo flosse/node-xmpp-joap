@@ -31,10 +31,10 @@ class Router extends events.EventEmitter
             @emit action.type, action
             @emit "action", action
           else
-            @sendError action, 406, "stanza #{action.type} is not supported"
+            @sendError (new joap.Error "stanza #{action.type} is not supported", 406), action
 
-  sendError: (a, code, msg) ->
-    @send new joap.ErrorIq a.type, code, msg,
+  sendError: (err, a) ->
+    @send new joap.ErrorIq a.type, err.code, err.message,
       to:   a.iq.attrs.from
       from: a.iq.attrs.to
       id:   a.iq.attrs.id
@@ -48,6 +48,6 @@ class Router extends events.EventEmitter
     res.cnode joap.serialize(data, a)
     @send res
 
-  send: (stanza) => @xmpp.send stanza
+  send: (stanza) -> @xmpp.send stanza
 
 exports.Router = Router

@@ -34,12 +34,9 @@ mgr = new joap.Manager comp
 mgr.addClass "User", User, ["name", "age"], ["name"]
 
 # implement the ACL by overriding the method
-mgr.hasPermission = (action) ->
-
-  if myACLRules(action.from, action.type, action.class, action.instance)
-    true
-  else
-    false
+mgr.hasPermission = (action, next) ->
+  if myACLRules(action) then next()
+  else next false
 ```
 
 #### Persistence

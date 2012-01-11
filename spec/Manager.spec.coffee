@@ -39,15 +39,21 @@ describe "Manager", ->
 
   xmppClient =
     send: (data) -> xmppComp.channels.stanza data
-    onData: (data) ->
+    onData: (data, cb) ->
 
-  run = ->
-    spy = jasmine.createSpy "spy"
-    xmppClient.onData = (data) =>
-      (expect data.toString()).toEqual @result.toString()
-      spy()
+  run = (cb)->
+    done = false
+    result = null
+    xmppClient.onData = (data) ->
+      result = data
+      done = true
     xmppClient.send @request
-    (expect spy).toHaveBeenCalled()
+    waitsFor -> done
+    runs ->
+      cb?.call @, result
+
+  compare = (res)->
+    (expect res.toString()).toEqual @result.toString()
 
   it "creates objects for caching objetcs and classes", ->
 
@@ -62,34 +68,34 @@ describe "Manager", ->
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @request = createAddRequest "User"
+      @request = createAddRequest "user"
       class User
         constructor: (@name, @age)-> @id = "foo"
-      @mgr.addClass "User", User, ["name"]
+      @mgr.addClass "user", User, ["name"]
 
     it "returns an error if you are not authorized", ->
-      @result = createAddErrorIq '403', "You are not authorized", "User"
-      @mgr.hasPermission = -> false
-      run.call @
+      @result = createAddErrorIq '403', "You are not authorized", "user"
+      @mgr.hasPermission = (a, next) -> next false, a
+      run.call @, compare
 
     it "returns an error if address isn't a class", ->
       @request.attrs.to += "/instance"
-      @result = createAddErrorIq 405, "'User@#{compJID}/instance' isn't a class", "User", "instance"
-      run.call @
+      @result = createAddErrorIq 405, "'user@#{compJID}/instance' isn't a class", "user", "instance"
+      run.call @, compare
 
     it "returns an error if class doesn't exists", ->
-      @result = createAddErrorIq 404, "Class 'Sun' does not exists", "Sun"
-      @request = createAddRequest "Sun"
-      run.call @
+      @result = createAddErrorIq 404, "Class 'sun' does not exists", "sun"
+      @request = createAddRequest "sun"
+      run.call @, compare
 
     it "returns an error if required attributes are not available", ->
-      @result = createAddErrorIq 406, "Invalid constructor parameters", "User"
-      run.call @
+      @result = createAddErrorIq 406, "Invalid constructor parameters", "user"
+      run.call @, compare
 
     it "returns an error if required attributes are not correct", ->
       @request.getChild("add").cnode(new joap.Attribute "age", 33)
-      @result = createAddErrorIq 406, "Invalid constructor parameters", "User"
-      run.call @
+      @result = createAddErrorIq 406, "Invalid constructor parameters", "user"
+      run.call @, compare
 
     it "returns the address of the new instance", ->
       @request.getChild("add")
@@ -97,15 +103,16 @@ describe "Manager", ->
         .cnode(new joap.Attribute "age", 99).up()
       @result = new ltx.Element "iq",
         to:clientJID
-        from:"User@#{compJID}"
+        from:"user@#{compJID}"
         id:'add_id_0'
         type:'result'
-      @result.c("add", xmlns:JOAP_NS).c("newAddress").t("User@#{compJID}/foo")
-      run.call @
-      instance = @mgr.objects.User.foo
-      (expect instance.id).toEqual "foo"
-      (expect instance.name).toEqual "Markus"
-      (expect instance.age).toEqual 99
+      @result.c("add", xmlns:JOAP_NS).c("newAddress").t("user@#{compJID}/foo")
+      run.call @, (result) ->
+        compare.call @, result
+        instance = @mgr.objects.user.foo
+        (expect instance.id).toEqual "foo"
+        (expect instance.name).toEqual "Markus"
+        (expect instance.age).toEqual 99
 
     it "takes care of the attribute names", ->
       @request.getChild("add")
@@ -113,133 +120,125 @@ describe "Manager", ->
         .cnode(new joap.Attribute "name", "Markus").up()
       @result = new ltx.Element "iq",
         to:clientJID
-        from:"User@#{compJID}"
+        from:"user@#{compJID}"
         id:'add_id_0'
         type:'result'
-      @result.c("add", xmlns:JOAP_NS).c("newAddress").t("User@#{compJID}/foo")
-      run.call @
-      instance = @mgr.objects.User.foo
-      (expect instance.name).toEqual "Markus"
-      (expect instance.age).toEqual 99
+      @result.c("add", xmlns:JOAP_NS).c("newAddress").t("user@#{compJID}/foo")
+      run.call @, (result) ->
+        compare.call @, result
+        instance = @mgr.objects.user.foo
+        (expect instance.name).toEqual "Markus"
+        (expect instance.age).toEqual 99
 
     it "creates a new ID", ->
       class Sun
-      @mgr.addClass "Sun", Sun
-      @request = createAddRequest "Sun"
-      spy = jasmine.createSpy "spy"
-      xmppClient.onData = (data) =>
-        id = data.getChild("add").getChildText("newAddress").split('/')[1]
+      @mgr.addClass "sun", Sun
+      @request = createAddRequest "sun"
+      run.call @, (result) ->
+        id = result.getChild("add").getChildText("newAddress").split('/')[1]
         (expect id).toNotEqual "foo"
         (expect id).toNotEqual ""
-        spy()
-      xmppClient.send @request
-      (expect spy).toHaveBeenCalled()
+        (expect false).toNotEqual ""
 
     it "preserve an ID", ->
       class Sun
         constructor: (@id)->
-      @mgr.addClass "Sun", Sun
-      @request = createAddRequest "Sun"
+      @mgr.addClass "sun", Sun
+      @request = createAddRequest "sun"
       @request.getChild("add")
         .cnode(new joap.Attribute "id", 99.3)
-      spy = jasmine.createSpy "spy"
-      xmppClient.onData = (data) =>
-        id = data.getChild("add").getChildText("newAddress").split('/')[1]
+      run.call @, (result) ->
+        id = result.getChild("add").getChildText("newAddress").split('/')[1]
         (expect id).toEqual '99.3'
-        spy()
-      xmppClient.send @request
-      (expect spy).toHaveBeenCalled()
 
   describe "read", ->
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @request = createRequest "read", "User", "foo"
+      @request = createRequest "read", "user", "foo"
 
     it "returns an error if you are not authorized", ->
-      @result = createErrorIq "read", '403', "You are not authorized", "User", "foo"
-      @mgr.hasPermission = -> false
-      run.call @
+      @result = createErrorIq "read", '403', "You are not authorized", "user", "foo"
+      @mgr.hasPermission = (a, next) -> next false
+      run.call @, compare
 
     it "returns an error if the class doesn't exists", ->
-      @result = createErrorIq "read", 404, "Class 'User' does not exists", "User", "foo"
-      run.call @
+      @result = createErrorIq "read", 404, "Class 'user' does not exists", "user", "foo"
+      run.call @, compare
 
     it "returns an error if the instance doesn't exists", ->
-      @mgr.addClass "User", (->)
-      @result = createErrorIq "read", 404, "Object 'foo' does not exists", "User", "foo"
-      run.call @
+      @mgr.addClass "user", (->)
+      @result = createErrorIq "read", 404, "Object 'foo' does not exists", "user", "foo"
+      run.call @, compare
 
     it "returns an error if the specified attribute doesn't exists", ->
       class User
-        constructor: ->
-          @id = "foo"
-      @mgr.addClass "User", User
-      @mgr.createInstance {class:"User"}, =>
+        constructor: -> @id = "foo"
+      @mgr.addClass "user", User
+      @mgr.saveInstance {class:"user"}, (new User),  (err, a, addr) =>
         @request.getChild("read").c("name").t("age")
-        @result = createErrorIq "read", 406, "Requested attribute 'age' doesn't exists", "User", "foo"
-        run.call @
+        @result = createErrorIq "read", 406, "Requested attribute 'age' doesn't exists", "user", "foo"
+        run.call @, compare
 
     it "returns all attributes if nothing was specified", ->
       class User
         constructor: ->
           @id = "foo"
           @name = "Markus"
-      @mgr.addClass "User", User
-      @mgr.createInstance {class:"User"}, =>
+      @mgr.addClass "user", User
+      @mgr.saveInstance {class:"user"}, (new User),  (err, a, addr) =>
         @result = new ltx.Element "iq",
           to:clientJID
-          from:"User@#{compJID}/foo"
+          from:"user@#{compJID}/foo"
           id:'read_id_0'
           type:'result'
         @result.c("read", {xmlns: JOAP_NS})
           .cnode(new joap.Attribute "id", "foo").up()
           .cnode(new joap.Attribute "name", "Markus")
-        run.call @
+        run.call @, compare
 
     it "returns only the specified attributes", ->
       class User
         constructor: ->
           @id = "foo"
           @name = "Markus"
-      @mgr.addClass "User", User
-      @mgr.createInstance {class:"User"}, =>
+      @mgr.addClass "user", User
+      @mgr.saveInstance {class:"user"}, (new User),  (err, a, addr) =>
         @request.getChild("read").c("name").t("name")
         @result = new ltx.Element "iq",
           to:clientJID
-          from:"User@#{compJID}/foo"
+          from:"user@#{compJID}/foo"
           id:'read_id_0'
           type:'result'
         @result.c("read", {xmlns: JOAP_NS})
           .cnode(new joap.Attribute "name", "Markus")
-        run.call @
+        run.call @, compare
 
   describe "edit", ->
 
     class User
-      constructor: (@name, @age) ->
-        @id = "foo"
+      constructor: (@name, @age) -> @id = "foo"
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @mgr.addClass "User", User, ["name"], ["id"]
-      @mgr.objects.User.foo = new User "Markus", 123
-      @request = createRequest "edit", "User", "foo"
+      @mgr.addClass "user", User, ["name"], ["id"]
+      @mgr.objects.user.foo = new User "Markus", 123
+      @request = createRequest "edit", "user", "foo"
 
     it "returns an error if you are not authorized", ->
-      @result = createErrorIq "edit", '403', "You are not authorized", "User", "foo"
-      @mgr.hasPermission = -> false
-      run.call @
+      @result = createErrorIq "edit", '403', "You are not authorized", "user", "foo"
+      @mgr.hasPermission = (a, next) -> next false
+      run.call @, compare
 
     it "returns an error if the instance doesn't exists", ->
-      @request = createRequest "edit", "User", "oof"
-      @result = createErrorIq "edit", 404, "Object 'oof' does not exists", "User", "oof"
-      run.call @
+      @request = createRequest "edit", "user", "oof"
+      @result = createErrorIq "edit", 404, "Object 'oof' does not exists", "user", "oof"
+      run.call @, compare
 
     it "returns an error if specified object attributes are not writeable", ->
       @request.getChild("edit").cnode(new joap.Attribute "id", "oof")
-      @result = createErrorIq "edit", 406, "Attribute 'id' of class 'User' is not writeable", "User", "foo"
-      run.call @
+      @result = createErrorIq "edit", 406, "Attribute 'id' of class 'user' is not writeable", "user", "foo"
+      run.call @, compare
 
     it "changes the specified attributes", ->
       @request.getChild("edit")
@@ -247,53 +246,52 @@ describe "Manager", ->
         .cnode(new joap.Attribute "new", "attr")
       @result = new ltx.Element "iq",
         to:clientJID
-        from:"User@#{compJID}/foo"
+        from:"user@#{compJID}/foo"
         id:'edit_id_0'
         type:'result'
       @result.c("edit", {xmlns: JOAP_NS})
-      run.call @
-      instance = @mgr.objects.User.foo
-      (expect instance.name).toEqual "oof"
-      (expect instance.new).toEqual "attr"
+      run.call @, ->
+        instance = @mgr.objects.user.foo
+        (expect instance.name).toEqual "oof"
+        (expect instance.new).toEqual "attr"
 
   describe "delete", ->
 
     class User
-      constructor: (@name, @age) ->
-        @id = "foo"
+      constructor: (@name, @age) -> @id = "foo"
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @mgr.addClass "User", User, ["name"], ["id"]
-      @mgr.objects.User.foo = new User "Markus", 123
-      @request = createRequest "delete", "User", "foo"
+      @mgr.addClass "user", User, ["name"], ["id"]
+      @mgr.objects.user.foo = new User "Markus", 123
+      @request = createRequest "delete", "user", "foo"
 
     it "returns an error if you are not authorized", ->
-      @result = createErrorIq "delete", '403', "You are not authorized", "User", "foo"
-      @mgr.hasPermission = -> false
-      run.call @
+      @result = createErrorIq "delete", '403', "You are not authorized", "user", "foo"
+      @mgr.hasPermission = (a, next) -> next false
+      run.call @, compare
 
     it "returns an error if the instance doesn't exists", ->
-      @request = createRequest "delete", "User", "oof"
-      @result = createErrorIq "delete", 404, "Object 'oof' does not exists", "User", "oof"
-      run.call @
+      @request = createRequest "delete", "user", "oof"
+      @result = createErrorIq "delete", 404, "Object 'oof' does not exists", "user", "oof"
+      run.call @, compare
 
     it "returns an error if address is not an instance", ->
       @request = createRequest "delete"
       @result = createErrorIq "delete", 405, "'#{compJID}' is not an instance"
-      run.call @
+      run.call @, compare
 
     it "deletes the specified instance", ->
       @result = new ltx.Element "iq",
         to:clientJID
-        from:"User@#{compJID}/foo"
+        from:"user@#{compJID}/foo"
         id:'delete_id_0'
         type:'result'
       @result.c("delete", {xmlns: JOAP_NS})
-      users = @mgr.objects.User
+      users = @mgr.objects.user
       (expect users.foo).toBeDefined()
-      run.call @
-      (expect users.foo).toBeUndefined()
+      run.call @, ->
+        (expect users.foo).toBeUndefined()
 
   describe "describe", ->
 
@@ -303,8 +301,8 @@ describe "Manager", ->
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @mgr.addClass "User", User, ["name"], ["id"]
-      @mgr.objects.User.foo = new User "Markus", 123
+      @mgr.addClass "user", User, ["name"], ["id"]
+      @mgr.objects.user.foo = new User "Markus", 123
       @request = createRequest "describe"
 
     it "returns the describtion of the object server", ->
@@ -323,5 +321,5 @@ describe "Manager", ->
           .c("name").t("x").up()
           .c("type").t("int").up()
           .c("desc","xml:lang":'en-US').t("a magic number").up().up()
-        .c("class").t("User").up()
+        .c("class").t("user").up()
       run.call @
