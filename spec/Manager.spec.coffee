@@ -221,7 +221,7 @@ describe "Manager", ->
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @mgr.addClass "user", User, ["name"], ["id"]
+      @mgr.addClass "user", User, ["name"], ["protected"]
       @mgr.objects.user.foo = new User "Markus", 123
       @request = createRequest "edit", "user", "foo"
 
@@ -236,8 +236,8 @@ describe "Manager", ->
       run.call @, compare
 
     it "returns an error if specified object attributes are not writeable", ->
-      @request.getChild("edit").cnode(new joap.Attribute "id", "oof")
-      @result = createErrorIq "edit", 406, "Attribute 'id' of class 'user' is not writeable", "user", "foo"
+      @request.getChild("edit").cnode(new joap.Attribute "protected", "oof")
+      @result = createErrorIq "edit", 406, "Attribute 'protected' of class 'user' is not writeable", "user", "foo"
       run.call @, compare
 
     it "changes the specified attributes", ->
@@ -254,6 +254,22 @@ describe "Manager", ->
         instance = @mgr.objects.user.foo
         (expect instance.name).toEqual "oof"
         (expect instance.new).toEqual "attr"
+
+    it "returns a new address if the id changed", ->
+      @request.getChild("edit")
+        .cnode(new joap.Attribute "id", "newId")
+      @result = new ltx.Element "iq",
+        to:clientJID
+        from:"user@#{compJID}/foo"
+        id:'edit_id_0'
+        type:'result'
+      @result.c("edit", {xmlns: JOAP_NS})
+        .c("newAddress").t("user@#{compJID}/newId")
+      run.call @, (res)->
+        compare.call @, res
+        instance = @mgr.objects.user.newId
+        (expect typeof instance).toEqual "object"
+        (expect instance.id).toEqual "newId"
 
   describe "delete", ->
 

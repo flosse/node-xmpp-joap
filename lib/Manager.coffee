@@ -127,7 +127,7 @@ class Manager extends events.EventEmitter
       @before.add
       @createInstance
       @saveInstance
-      (a, next) => next null, a, @getAddress a.class, a.instance
+      (a, next) => next null, a, @getAddress(a.class, a.instance)
       @sendResponse
     ], (err) => @sendError err, a
 
@@ -142,10 +142,13 @@ class Manager extends events.EventEmitter
       @before.edit
       @areWritableAttributes
       @loadInstance
-      (a, inst, next) ->
+      (a, inst, next) =>
         inst[k] = v for k,v of a.attributes
+        if a.attributes.id?
+          a.newAddress = @getAddress(a.class, inst.id)
         next null, a, inst
       @saveInstance
+      (a, next) => next null, a, a.newAddress
       @sendResponse
     ], (err) => @sendError err, a
 
