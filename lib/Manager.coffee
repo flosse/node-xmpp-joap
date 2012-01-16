@@ -28,23 +28,22 @@ class Manager extends events.EventEmitter
     args.split /\s*,\s*/
 
   # override if you want to manipule the request
-  before:
+  beforeAdd: (a, next) -> next null, a
 
-    add: (a, next) -> next null, a
-    # override if you want to manipule the reading of instances
-    read: (a, next) -> next null, a
+  # override if you want to manipule the reading of instances
+  beforeRead: (a, next) -> next null, a
 
-    # override if you want to manipule the editing of instances
-    edit: (a, next) -> next null, a
+  # override if you want to manipule the deletion of instances
+  beforeDelete: (a, next) -> next null, a
 
-    # override if you want to manipule the deletion of instances
-    delete: (a, next) -> next null, a
+  # override if you want to manipule the description of instances
+  beforeDescribe: (a, next) -> next null, a
 
-    # override if you want to manipule the description of instances
-    describe: (a, next) -> next null, a
+  # override if you want to manipule the search of instances
+  beforeSearch: (a, next) -> next null, a
 
-    # override if you want to manipule the search of instances
-    search: (a, next) -> next null, a
+  # override if you want to manipule the editing of instances
+  beforeEdit: (a, next) -> next null, a
 
   # override if you want to use a database
   saveInstance: (a, obj, next) =>
@@ -59,7 +58,7 @@ class Manager extends events.EventEmitter
     next err, a, inst
 
   # override if you want to use a database
-  queryInstances: (a, next) ->
+  queryInstances: (a, next) =>
     if a.attributes?
       items = []
       for id, o of @objects[a.class]
@@ -104,7 +103,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @before.read
+      @beforeRead
       @loadInstance
       @areExistingAttributes
       (a, inst, next) ->
@@ -124,7 +123,7 @@ class Manager extends events.EventEmitter
       @isClassAddress
       @classExists
       @areRequiredAttributes
-      @before.add
+      @beforeAdd
       @createInstance
       @saveInstance
       (a, next) => next null, a, @getAddress(a.class, a.instance)
@@ -139,7 +138,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @before.edit
+      @beforeEdit
       @areWritableAttributes
       @loadInstance
       (a, inst, next) =>
@@ -158,7 +157,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @before.delete
+      @beforeDelete
       @loadInstance
       @deleteInstance
       @sendResponse
@@ -168,7 +167,7 @@ class Manager extends events.EventEmitter
     async.waterfall [
       (next) -> next null, a
       @grant
-      @before.describe
+      @beforeDescribe
       @createDescription
       @sendResponse
     ], (err) => @sendError err, a
@@ -179,7 +178,7 @@ class Manager extends events.EventEmitter
       @grant
       @isClassAddress
       @classExists
-      @before.search
+      @beforeSearch
       @queryInstances
       (a, items, next) =>
         addresses = (@getAddress a.class, id for id in items) if items?
