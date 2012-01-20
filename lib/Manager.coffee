@@ -85,6 +85,7 @@ class Manager extends events.EventEmitter
   createInstance: (a, next) =>
     clazz = @classes[a.class]
     argNames = Manager.getArgNames clazz.creator
+    a.attributes ?= {}
     x = new clazz.creator (a.attributes[n] for n in argNames when n isnt "")...
     x.id = joap.uniqueId() if not x.id
     a.instance = x.id
