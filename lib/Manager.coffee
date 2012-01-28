@@ -112,6 +112,9 @@ class Manager extends events.EventEmitter
         if a.limits?
           res[k] = v for k,v of inst when k in a.limits and typeof v isnt "function"
         else
+          # Add static properties
+          res.__static__ = {}
+          res.__static__[k] = v for k,v of inst.__proto__?.constructor
           res[k] = v for k,v of inst when typeof v isnt "function"
         next null, a, res
       @sendResponse
