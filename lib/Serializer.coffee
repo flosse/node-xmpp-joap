@@ -23,7 +23,9 @@ class Serializer
               el.cnode(new joap.Attribute k,v)
             el
           when "add"
-            el.c("newAddress").t(val).up()
+            if val?
+              el.c("newAddress").t(val).up()
+            el
           when "edit"
             el.c("newAddress").t(val) if val?
             el
