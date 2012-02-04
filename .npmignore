@@ -1,2 +1,4 @@
 lib/*.coffee
 spec/*.coffee
+Cakefile
+.npmignore
