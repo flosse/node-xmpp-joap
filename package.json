@@ -1,24 +1,39 @@
-{ "name": "node-xmpp-joap"
-,"version": "0.0.7"
-,"main": "./lib/node-xmpp-joap"
-,"description": "Jabber Object Access Protocol (XEP-0075) library for node-xmpp"
-,"author": "Markus Kohlhase"
-,"dependencies": {
-      "node-xmpp": ">=0.3.1"
-		 ,"ltx": ">= 0.1.2"
-		 ,"async": ">= 0.1.15"
-		 }
-,"devDependencies": { "jasmine-node": ">=1.0.13" }
-,"repositories": [{"type": "git"
-		  ,"path": "git://github.com/flosse/node-xmpp-joap.git"
-		  }]
-,"homepage": "http://github.com/flosse/node-xmpp-joap"
-,"bugs": "http://github.com/flosse/node-xmpp-joap/issues"
-,"maintainers": [{"name": "Markus Kohlhase"
-		 ,"email": "mail@markus-kohlhase.de"
-		 ,"web": "http://github.com/flosse/"
-		 }]
-,"contributors": ["Markus Kohlhase"]
-,"licenses": [{"type": "MIT"}]
-,"engine": "node"
+{
+  "name":         "node-xmpp-joap",
+  "version":      "0.0.8",
+  "main":         "./lib/node-xmpp-joap",
+  "description":  "Jabber Object Access Protocol (XEP-0075) library for node-xmpp",
+  "author":       "Markus Kohlhase",
+  "contributors": ["Markus Kohlhase"],
+  "licenses":     [{"type": "MIT"}],
+  "engine":       "node",
+  "homepage":     "http://github.com/flosse/node-xmpp-joap",
+  "bugs":         "http://github.com/flosse/node-xmpp-joap/issues",
+  "dependencies":
+  {
+    "node-xmpp":  ">=0.3.1",
+  	"ltx":        ">= 0.1.2",
+  	"async":      ">= 0.1.15"
+  },
+  "devDependencies":
+  {
+    "jasmine-node":   ">=1.0.21",
+    "coffee-script":  ">=1.2.0"
+  },
+  "repositories":
+  [
+    {
+      "type": "git",
+  		"path": "git://github.com/flosse/node-xmpp-joap.git"
+    }
+  ],
+  "maintainers":
+  [
+    {
+      "name":   "Markus Kohlhase",
+   	  "email":  "mail@markus-kohlhase.de",
+   	  "web":    "http://github.com/flosse/"
+ 	  }
+  ],
+  "scripts": { "test": "jasmine-node --coffee spec/" }
 }

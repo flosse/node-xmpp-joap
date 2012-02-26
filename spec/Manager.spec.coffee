@@ -1,4 +1,4 @@
-joap = require "node-xmpp-joap"
+joap = require "../lib/node-xmpp-joap"
 ltx  = require "ltx"
 
 JOAP_NS = "jabber:iq:joap"
