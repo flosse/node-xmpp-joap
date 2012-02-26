@@ -2,7 +2,7 @@
 # Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
 
 events  = require "events"
-joap    = require "node-xmpp-joap"
+joap    = require "./node-xmpp-joap"
 ltx     = require "ltx"
 async   = require "async"
 
