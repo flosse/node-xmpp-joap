@@ -4,6 +4,8 @@ Jabber Object Access Protocol
 [XEP-0075](http://xmpp.org/extensions/xep-0075.html) library for
 [node-xmpp](https://github.com/astro/node-xmpp).
 
+[![Build Status](https://secure.travis-ci.org/flosse/node-xmpp-joap.png)](http://travis-ci.org/flosse/node-xmpp-joap)
+
 ## Installation
 
 With package manager [npm](http://npmjs.org/):
