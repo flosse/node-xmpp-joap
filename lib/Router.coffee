@@ -33,7 +33,7 @@ class Router extends events.EventEmitter
             @sendError (new joap.Error "stanza #{action.type} is not supported", 406), action
 
   sendError: (err, a) ->
-    @send new joap.ErrorIq a.type, err.code, err.message,
+    @send new joap.stanza.ErrorIq a.type, err.code, err.message,
       to:   a.iq.attrs.from
       from: a.iq.attrs.to
       id:   a.iq.attrs.id

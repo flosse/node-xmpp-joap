@@ -12,7 +12,7 @@ describe "Manager", ->
     from = compJID
     from = "#{clazz}@#{from}" if clazz?
     from += "/#{instance}"    if instance?
-    errMsg = new joap.ErrorIq type, code, msg,
+    errMsg = new joap.stanza.ErrorIq type, code, msg,
       to:   clientJID
       from: from
       id:   "#{type}_id_0"
@@ -93,14 +93,14 @@ describe "Manager", ->
       run.call @, compare
 
     it "returns an error if required attributes are not correct", ->
-      @request.getChild("add").cnode(new joap.Attribute "age", 33)
+      @request.getChild("add").cnode(new joap.stanza.Attribute "age", 33)
       @result = createAddErrorIq 406, "Invalid constructor parameters", "user"
       run.call @, compare
 
     it "returns the address of the new instance", ->
       @request.getChild("add")
-        .cnode(new joap.Attribute "name", "Markus").up()
-        .cnode(new joap.Attribute "age", 99).up()
+        .cnode(new joap.stanza.Attribute "name", "Markus").up()
+        .cnode(new joap.stanza.Attribute "age", 99).up()
       @result = new ltx.Element "iq",
         to:clientJID
         from:"user@#{compJID}"
@@ -116,8 +116,8 @@ describe "Manager", ->
 
     it "takes care of the attribute names", ->
       @request.getChild("add")
-        .cnode(new joap.Attribute "age", 99).up()
-        .cnode(new joap.Attribute "name", "Markus").up()
+        .cnode(new joap.stanza.Attribute "age", 99).up()
+        .cnode(new joap.stanza.Attribute "name", "Markus").up()
       @result = new ltx.Element "iq",
         to:clientJID
         from:"user@#{compJID}"
@@ -146,7 +146,7 @@ describe "Manager", ->
       @mgr.addClass "sun", Sun
       @request = createAddRequest "sun"
       @request.getChild("add")
-        .cnode(new joap.Attribute "id", 99.3)
+        .cnode(new joap.stanza.Attribute "id", 99.3)
       run.call @, (result) ->
         id = result.getChild("add").getChildText("newAddress").split('/')[1]
         (expect id).toEqual '99.3'
@@ -193,8 +193,8 @@ describe "Manager", ->
           id:'read_id_0'
           type:'result'
         @result.c("read", {xmlns: JOAP_NS})
-          .cnode(new joap.Attribute "id", "foo").up()
-          .cnode(new joap.Attribute "name", "Markus")
+          .cnode(new joap.stanza.Attribute "id", "foo").up()
+          .cnode(new joap.stanza.Attribute "name", "Markus")
         run.call @, compare
 
     it "returns only the specified attributes", ->
@@ -211,7 +211,7 @@ describe "Manager", ->
           id:'read_id_0'
           type:'result'
         @result.c("read", {xmlns: JOAP_NS})
-          .cnode(new joap.Attribute "name", "Markus")
+          .cnode(new joap.stanza.Attribute "name", "Markus")
         run.call @, compare
 
   describe "edit", ->
@@ -236,14 +236,14 @@ describe "Manager", ->
       run.call @, compare
 
     it "returns an error if specified object attributes are not writeable", ->
-      @request.getChild("edit").cnode(new joap.Attribute "protected", "oof")
+      @request.getChild("edit").cnode(new joap.stanza.Attribute "protected", "oof")
       @result = createErrorIq "edit", 406, "Attribute 'protected' of class 'user' is not writeable", "user", "foo"
       run.call @, compare
 
     it "changes the specified attributes", ->
       @request.getChild("edit")
-        .cnode(new joap.Attribute "name", "oof").up()
-        .cnode(new joap.Attribute "new", "attr")
+        .cnode(new joap.stanza.Attribute "name", "oof").up()
+        .cnode(new joap.stanza.Attribute "new", "attr")
       @result = new ltx.Element "iq",
         to:clientJID
         from:"user@#{compJID}/foo"
@@ -257,7 +257,7 @@ describe "Manager", ->
 
     it "returns a new address if the id changed", ->
       @request.getChild("edit")
-        .cnode(new joap.Attribute "id", "newId")
+        .cnode(new joap.stanza.Attribute "id", "newId")
       @result = new ltx.Element "iq",
         to:clientJID
         from:"user@#{compJID}/foo"

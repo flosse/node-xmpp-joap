@@ -3,6 +3,7 @@
 
 ltx     = require "ltx"
 joap    = require "./node-xmpp-joap"
+stanza  = joap.stanza
 
 JOAP_NS       = "jabber:iq:joap"
 RPC_NS        = "jabber:iq:rpc"
@@ -20,7 +21,7 @@ class Serializer
         switch action.type
           when "read"
             for k,v of val
-              el.cnode(new joap.Attribute k,v)
+              el.cnode(new stanza.Attribute k,v)
             el
           when "add"
             if val?
@@ -39,10 +40,10 @@ class Serializer
             if val?
               if val.desc?
                 for k,v of val.desc
-                  el.cnode(new joap.Description v,k).up()
+                  el.cnode(new stanza.Description v,k).up()
               if val.attributes?
                 for k,v of val.attributes
-                  el.cnode(new joap.AttributeDescription k, v.type, v.writable, v.desc).up()
+                  el.cnode(new stanza.AttributeDescription k, v.type, v.writable, v.desc).up()
               if val.classes?
                 for c in val.classes
                   el.c("class").t(c).up()
@@ -71,9 +72,9 @@ class Serializer
 
         when "object"
           if val instanceof Array
-            new joap.Array val
+            new stanza.Array val
           else
-            new joap.Struct val
+            new stanza.Struct val
     else ""
 
 exports.Serializer = Serializer
