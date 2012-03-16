@@ -75,9 +75,17 @@ class Manager extends events.EventEmitter
   # Public method to override by the main application
   hasPermission: (a, next) -> next null, a
 
-  addClass: (name, creator, required=[], protected=[], objects={}) ->
+  addClass: (name, creator, opts={}) ->
+    { required, protected, objects } = opts
+    objects ?={}
+
+    clazz = new joap.object.Class "#{name}@#{@xmpp.jid.toString()}",
+      creator: creator
+      required: required
+      protected: protected
+
     if typeof creator is "function" and not @classes[name]?
-      @classes[name] = { creator:creator, required:required, protected:protected }
+      @classes[name] = clazz
       @objects[name] = objects
       true
     else false

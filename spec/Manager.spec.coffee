@@ -61,6 +61,25 @@ describe "Manager", ->
     (expect typeof mgr.classes).toEqual "object"
     (expect typeof mgr.objects).toEqual "object"
 
+  describe "registration of classes", ->
+
+    beforeEach ->
+      @mgr = new joap.Manager xmppComp
+
+    it "supports a method to register classes", ->
+
+      class User
+        constructor: (@name, @age)->
+
+      @mgr.addClass "user", User,
+        required: ["name"]
+        protected: ["name"]
+
+      userClz = @mgr.classes.user
+      defAttrs = userClz.definitions.attributes
+      (expect defAttrs.name.required).toEqual true
+      (expect defAttrs.name.writable).toEqual false
+
   describe "add", ->
 
     createAddRequest = (clazz, instance) -> createRequest("add", clazz, instance)
@@ -71,7 +90,7 @@ describe "Manager", ->
       @request = createAddRequest "user"
       class User
         constructor: (@name, @age)-> @id = "foo"
-      @mgr.addClass "user", User, ["name"]
+      @mgr.addClass "user", User, required: ["name"]
 
     it "returns an error if you are not authorized", ->
       @result = createAddErrorIq '403', "You are not authorized", "user"
@@ -221,7 +240,9 @@ describe "Manager", ->
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @mgr.addClass "user", User, ["name"], ["protected"]
+      @mgr.addClass "user", User,
+        required: ["name"]
+        protected: ["protected"]
       @mgr.objects.user.foo = new User "Markus", 123
       @request = createRequest "edit", "user", "foo"
 
@@ -278,7 +299,9 @@ describe "Manager", ->
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @mgr.addClass "user", User, ["name"], ["id"]
+      @mgr.addClass "user", User,
+        required: ["name"]
+        protected: ["id"]
       @mgr.objects.user.foo = new User "Markus", 123
       @request = createRequest "delete", "user", "foo"
 
@@ -317,7 +340,9 @@ describe "Manager", ->
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
-      @mgr.addClass "user", User, ["name"], ["id"]
+      @mgr.addClass "user", User,
+        required: ["name"]
+        protected: ["id"]
       @mgr.objects.user.foo = new User "Markus", 123
       @request = createRequest "describe"
 

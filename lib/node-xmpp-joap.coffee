@@ -4,6 +4,7 @@
 exports.Router  = require("./Router").Router
 exports.Manager = require("./Manager").Manager
 
+exports.object = require "./JOAPObjects"
 exports.stanza = require "./stanza"
 
 Parser = require("./Parser").Parser
