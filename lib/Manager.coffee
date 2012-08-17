@@ -1,5 +1,7 @@
-# This program is distributed under the terms of the MIT license.
-# Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
+This program is distributed under the terms of the MIT license.
+Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
 
 events  = require "events"
 joap    = require "./node-xmpp-joap"
@@ -76,13 +78,14 @@ class Manager extends events.EventEmitter
   hasPermission: (a, next) -> next null, a
 
   addClass: (name, creator, opts={}) ->
-    { required, protected, objects } = opts
+    { required, objects } = opts
+    prot = opts.protected
     objects ?={}
 
     clazz = new joap.object.Class "#{name}@#{@xmpp.jid.toString()}",
       creator: creator
       required: required
-      protected: protected
+      protected: prot
 
     if typeof creator is "function" and not @classes[name]?
       @classes[name] = clazz
@@ -192,6 +195,7 @@ class Manager extends events.EventEmitter
       @grant
       @isClassAddress
       @classExists
+      @isValidSearch
       @beforeSearch
       @queryInstances
       (a, items, next) =>
@@ -228,6 +232,11 @@ class Manager extends events.EventEmitter
   classExists: (a, next) =>
     if not @classes[a.class]?
       err = new joap.Error "Class '#{a.class}' does not exists", 404
+    next err, a
+
+  isValidSearch: (a, next) =>
+    if a.attributes? and typeof a.attributes isnt "object" or a.attributes instanceof Array
+      err = next new joap.Error "search filter is invalid", 405
     next err, a
 
   isClassAddress: (a, next) ->
