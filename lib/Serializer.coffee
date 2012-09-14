@@ -1,5 +1,7 @@
-# This program is distributed under the terms of the MIT license.
-# Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
+This program is distributed under the terms of the MIT license.
+Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
 
 ltx     = require "ltx"
 joap    = require "./node-xmpp-joap"
@@ -52,7 +54,7 @@ class Serializer
             el
 
       else if action.type is "rpc"
-        el = (new Element "query", {xmlns:RPC_NS})
+        new stanza.MethodResponse val
 
     else if val?
 

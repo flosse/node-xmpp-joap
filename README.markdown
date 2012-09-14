@@ -148,7 +148,6 @@ cake test
 ## ToDo's
 
 - describe support
-- Jabber RPC support
 
 ## License
 

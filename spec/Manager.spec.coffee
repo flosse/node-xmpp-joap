@@ -2,6 +2,7 @@ joap = require "../lib/node-xmpp-joap"
 ltx  = require "ltx"
 
 JOAP_NS = "jabber:iq:joap"
+RPC_NS  = "jabber:iq:rpc"
 
 describe "Manager", ->
 
@@ -26,7 +27,10 @@ describe "Manager", ->
       from:clientJID
       id:"#{type}_id_0"
       type:'set'
-    iq.c type, xmlns:JOAP_NS
+    if type is "query"
+      iq.c type, xmlns:RPC_NS
+    else
+      iq.c type, xmlns:JOAP_NS
     iq
 
   xmppComp =
@@ -364,3 +368,77 @@ describe "Manager", ->
           .c("desc","xml:lang":'en-US').t("a magic number").up().up()
         .c("class").t("user").up()
       run.call @
+
+  describe "rpc", ->
+
+    class User
+      constructor: (@name, @age) ->
+        @id = "foo"
+      getAge: -> @age
+      @classMethod: (nr) -> 50 + nr
+
+    beforeEach ->
+      @mgr = new joap.Manager xmppComp
+      @mgr.addClass "user", User,
+        required: ["name", "age"]
+        protected: ["id"]
+      @mgr.addServerMethod "serverMethod", (param) -> 2 * param
+      @mgr.objects.user.foo = new User "Markus", 432
+
+    it "can handle an instance rpc request", ->
+      @request = createRequest "query", "user", "foo"
+      @request.children[0].c("methodCall").c("methodName").t("getAge")
+      @result = new ltx.Element "iq",
+        to:clientJID
+        from:"user@#{compJID}/foo"
+        id:'query_id_0'
+        type:'result'
+      @result.c("query", {xmlns: RPC_NS})
+        .c("methodResponse").c("params").c("param").c("value").c("int").t("432")
+      run.call @, compare
+
+    it "can handle a class rpc request", ->
+      @request = createRequest "query", "user"
+      @request.children[0].c("methodCall")
+        .c("methodName").t("classMethod").up()
+        .c("params").c("param").c("value").c("int").t("5")
+      @result = new ltx.Element "iq",
+        to:clientJID
+        from:"user@#{compJID}"
+        id:'query_id_0'
+        type:'result'
+      @result.c("query", {xmlns: RPC_NS})
+        .c("methodResponse").c("params").c("param").c("value").c("int").t("55")
+      run.call @, compare
+
+    it "can handle a server rpc request", ->
+      @request = createRequest "query"
+      @request.children[0].c("methodCall")
+        .c("methodName").t("serverMethod").up()
+        .c("params").c("param").c("value").c("int").t("3")
+      @result = new ltx.Element "iq",
+        to:clientJID
+        from: compJID
+        id:'query_id_0'
+        type:'result'
+      @result.c("query", {xmlns: RPC_NS})
+        .c("methodResponse").c("params").c("param").c("value").c("int").t("6")
+      run.call @, compare
+
+    it "sends an rpc error if something went wrong", ->
+      @request = createRequest "query", "user", "foo"
+      @request.children[0].c("methodCall").c("methodName").t("invalidMethod")
+      @result = new ltx.Element "iq",
+        to:clientJID
+        from:"user@#{compJID}/foo"
+        id:'query_id_0'
+        type:'error'
+      @result.c("query", {xmlns: RPC_NS})
+        .c("methodResponse").c("fault").c("value").c("struct")
+          .c("member")
+            .c("name").t("faultCode").up()
+            .c("value").c("int").t("0").up().up().up()
+          .c("member")
+            .c("name").t("faultString").up()
+            .c("value").c("string").t("Instance method 'invalidMethod' does not exist").up().up()
+      run.call @, compare

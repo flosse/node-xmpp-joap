@@ -1,5 +1,7 @@
-# This program is distributed under the terms of the MIT license.
-# Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
+This program is distributed under the terms of the MIT license.
+Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
 
 ltx     = require "ltx"
 events  = require "events"

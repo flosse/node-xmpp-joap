@@ -12,10 +12,11 @@ class Manager extends events.EventEmitter
 
   constructor: (@xmpp) ->
 
-    @classes = {}
-    @serverDescription={'en-US':"JOAP Server"}
-    @serverAttributes = {}
-    @serverMethods = {}
+    @serverDescription  = {'en-US':"JOAP Server"}
+    @serverAttributes   = {}
+    @serverMethods      = {}
+    @classes            = {}
+    @objects            = {}
     @router = new joap.Router @xmpp
     @router.on "describe", @onDescribe
     @router.on "add",      @onAdd
@@ -23,29 +24,32 @@ class Manager extends events.EventEmitter
     @router.on "edit",     @onEdit
     @router.on "delete",   @onDelete
     @router.on "search",   @onSearch
-    @objects = {}
+    @router.on "rpc",      @onRPC
 
   @getArgNames: (fn) ->
     args = fn.toString().match(/function\b[^(]*\(([^)]*)\)/)[1]
     args.split /\s*,\s*/
 
-  # override if you want to manipule the request
+  # override if you want to manipulate the request
   beforeAdd: (a, next) -> next null, a
 
-  # override if you want to manipule the reading of instances
+  # override if you want to manipulate the reading of instances
   beforeRead: (a, next) -> next null, a
 
-  # override if you want to manipule the deletion of instances
+  # override if you want to manipulate the deletion of instances
   beforeDelete: (a, next) -> next null, a
 
-  # override if you want to manipule the description of instances
+  # override if you want to manipulate the description of instances
   beforeDescribe: (a, next) -> next null, a
 
-  # override if you want to manipule the search of instances
+  # override if you want to manipulate the search of instances
   beforeSearch: (a, next) -> next null, a
 
-  # override if you want to manipule the editing of instances
+  # override if you want to manipulate the editing of instances
   beforeEdit: (a, next) -> next null, a
+
+  # override if you want to manipulate the rpc request
+  beforeRPC: (a, next) -> next null, a
 
   # override if you want to use a database
   saveInstance: (a, obj, next) =>
@@ -54,7 +58,7 @@ class Manager extends events.EventEmitter
 
   # override if you want to use a database
   loadInstance: (a, next) =>
-    inst = @objects[a.class][a.instance]
+    inst = @objects[a.class]?[a.instance]
     if not inst?
       err = new joap.Error "Object '#{a.instance}' does not exists", 404
     next err, a, inst
@@ -80,18 +84,23 @@ class Manager extends events.EventEmitter
   addClass: (name, creator, opts={}) ->
     { required, objects } = opts
     prot = opts.protected
-    objects ?={}
+    objects ?= {}
 
     clazz = new joap.object.Class "#{name}@#{@xmpp.jid.toString()}",
       creator: creator
       required: required
       protected: prot
 
+    for k,v of clazz.prototype when typeof v is "function" and not (k in prot)
+      prot.push k
+
     if typeof creator is "function" and not @classes[name]?
       @classes[name] = clazz
       @objects[name] = objects
       true
     else false
+
+  addServerMethod: (name, fn) -> @serverMethods[name] ?= fn
 
   createInstance: (a, next) =>
     clazz = @classes[a.class]
@@ -185,6 +194,7 @@ class Manager extends events.EventEmitter
       (next) -> next null, a
       @grant
       @beforeDescribe
+      @checkTarget
       @createDescription
       @sendResponse
     ], (err) => @sendError err, a
@@ -203,6 +213,56 @@ class Manager extends events.EventEmitter
         next null, a, addresses
       @sendResponse
     ], (err) => @sendError err, a
+
+  onRPC: (a) =>
+    async.waterfall [
+      (next) -> next null, a
+      @grant
+      @beforeRPC
+      @checkTarget
+      @execRPC
+      @sendResponse
+    ], (err) => @sendError err, a
+
+  checkTarget: (a, next) =>
+    err = null
+    if a.instance
+      a.target = "instance"
+      err ?= @isInstanceAddress a
+    else if a.class and not a.instance
+      a.target = "class"
+      err ?= @isClassAddress a
+    else
+      a.target = "server"
+    if a.class or a.instance
+      err ?= @classExists a
+    next err, a
+
+  execRPC: (a, next) =>
+    switch a.target
+      when "server"
+        method = @serverMethods[a.method]
+        if typeof method isnt "function"
+          err = new joap.Error "Server method '#{a.method}' does not exist"
+        else
+          data = method.apply null, a.params
+        next err, a, data
+      when "class"
+        clazz = @classes[a.class].creator
+        if typeof clazz?[a.method] isnt "function"
+          err = new joap.Error "Class method '#{a.method}' does not exist"
+        else
+          data = clazz[a.method].apply clazz, a.params
+        next err, a, data
+      when "instance"
+        @loadInstance a, (err, a, inst) =>
+          if err? or typeof inst?[a.method] isnt "function"
+            err ?= new joap.Error "Instance method '#{a.method}' does not exist"
+          else
+            data = inst[a.method].apply inst, a.params
+          next err, a, data
+      else
+        next (new Error), a
 
   createDescription: (a, next) =>
     data = null
@@ -232,7 +292,8 @@ class Manager extends events.EventEmitter
   classExists: (a, next) =>
     if not @classes[a.class]?
       err = new joap.Error "Class '#{a.class}' does not exists", 404
-    next err, a
+    next? err, a
+    err
 
   isValidSearch: (a, next) =>
     if a.attributes? and typeof a.attributes isnt "object" or a.attributes instanceof Array
@@ -242,12 +303,14 @@ class Manager extends events.EventEmitter
   isClassAddress: (a, next) ->
     if not a.class? or a.instance?
       err = new joap.Error "'#{a.iq.attrs.to}' isn't a class", 405
-    next err, a
+    next? err, a
+    err
 
   isInstanceAddress: (a, next) ->
     if not a.class? or not a.instance?
       err = new joap.Error "'#{a.iq.attrs.to}' is not an instance", 405
-    next err, a
+    next? err, a
+    err
 
   areRequiredAttributes: (a, next) =>
     for r in @classes[a.class].required
@@ -273,7 +336,7 @@ class Manager extends events.EventEmitter
     next err, a
 
   sendError: (err, a) =>
-    if err.code then @router.sendError err, a
+    if err.code or a.type is "rpc" then @router.sendError err, a
     else @sendInternalServerError err, a
 
   sendResponse: (a, data) => @router.sendResponse a, data

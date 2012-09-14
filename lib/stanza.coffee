@@ -1,5 +1,7 @@
-# This program is distributed under the terms of the MIT license.
-# Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
+This program is distributed under the terms of the MIT license.
+Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
 
 ltx     = require "ltx"
 joap    = require "./node-xmpp-joap"
@@ -68,20 +70,32 @@ class ErrorIq extends ltx.Element
 
     else if type is "rpc"
       @c("query", xmlns: RPC_NS)
-      @c("methodResponse")
-      @c("fault")
-      @cnode(new Value { faultCode: code, faultString: msg })
+        .c("methodResponse")
+        .c("fault")
+        .cnode(new Value { faultCode: (code or 0), faultString: msg })
 
 class Error extends ltx.Element
   constructor: (code, msg) ->
     super "error", {code:code}
     @t msg if msg?
 
-exports.Attribute = Attribute
-exports.AttributeDescription = AttributeDescription
-exports.Description = Description
-exports.Member = Member
-exports.Struct = Struct
-exports.Array = Array
-exports.Value = Value
-exports.ErrorIq = ErrorIq
+class MethodResponse extends ltx.Element
+  constructor: (val) ->
+    super "query", xmlns: RPC_NS
+    # success but no return value => return true
+    val = true if not val?
+    @c("methodResponse")
+      .c("params")
+      .c("param")
+      .cnode(new Value val)
+
+module.exports =
+  Attribute:            Attribute
+  AttributeDescription: AttributeDescription
+  Description:          Description
+  Member:               Member
+  Struct:               Struct
+  Array:                Array
+  Value:                Value
+  ErrorIq:              ErrorIq
+  MethodResponse:       MethodResponse
