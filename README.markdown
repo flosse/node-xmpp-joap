@@ -27,7 +27,7 @@ comp = new xmpp.Component
   port      : "8888"
 
 class User
-  constructor: (@name, @age) ->
+  constructor: (@id, options={}) ->
 
 # create a new manager instance
 mgr = new joap.Manager comp
@@ -36,7 +36,7 @@ mgr = new joap.Manager comp
 mgr.addClass "User", User,
   required: ["name", "age"]
   protected: ["id"]
-  constructorArguments: ["id", "options"]
+  constructorAttributes: ["id", "options"]
 
 # implement the ACL by overriding the method
 mgr.hasPermission = (action, next) ->
