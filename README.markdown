@@ -33,7 +33,9 @@ class User
 mgr = new joap.Manager comp
 
 # add a class
-mgr.addClass "User", User, ["name", "age"], ["name"]
+mgr.addClass "User", User,
+  required: ["name", "age"]
+  protected: ["name"]
 
 # implement the ACL by overriding the method
 mgr.hasPermission = (action, next) ->

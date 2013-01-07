@@ -1,6 +1,6 @@
 ###
 This program is distributed under the terms of the MIT license.
-Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+Copyright 2012 - 2013 (c) Markus Kohlhase <mail@markus-kohlhase.de>
 ###
 
 ltx     = require "ltx"
@@ -79,4 +79,4 @@ class Serializer
             new stanza.Struct val
     else ""
 
-exports.Serializer = Serializer
+module.exports = Serializer

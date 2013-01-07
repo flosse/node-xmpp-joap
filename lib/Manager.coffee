@@ -74,9 +74,13 @@ class Manager extends events.EventEmitter
       next null, a, (k for k,v of @objects[a.class])
 
   # override if you want to use a database
-  deleteInstance: (a, inst, next) =>
-    delete @objects[a.class][a.instance]
-    next null, a
+  deleteInstance: (a, next) =>
+    @loadInstance a, (err, a, inst) =>
+      if err?
+        next err, a
+      else
+        delete @objects[a.class][a.instance]
+        next null, a
 
   # Public method to override by the main application
   hasPermission: (a, next) -> next null, a
@@ -184,7 +188,6 @@ class Manager extends events.EventEmitter
       @isInstanceAddress
       @classExists
       @beforeDelete
-      @loadInstance
       @deleteInstance
       @sendResponse
     ], (err) => @sendError err, a
@@ -354,4 +357,4 @@ class Manager extends events.EventEmitter
 
     @router.send iq
 
-exports.Manager = Manager
+module.exports = Manager
