@@ -93,8 +93,10 @@ describe "Manager", ->
       @mgr = new joap.Manager xmppComp
       @request = createAddRequest "user"
       class User
-        constructor: (@name, @age)-> @id = "foo"
-      @mgr.addClass "user", User, required: ["name"]
+        constructor: (@name) -> @id = "foo"
+      @mgr.addClass "user", User,
+        required: ["name"],
+        protected: ["id"]
 
     it "returns an error if you are not authorized", ->
       @result = createAddErrorIq '403', "You are not authorized", "user"

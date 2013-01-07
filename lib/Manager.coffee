@@ -86,8 +86,8 @@ class Manager extends events.EventEmitter
   hasPermission: (a, next) -> next null, a
 
   addClass: (name, creator, opts={}) ->
-    { required, objects } = opts
-    prot = opts.protected
+    { required, objects, constructorAttributes } = opts
+    prot = opts.protected # protected is protected in coffee-script ;-)
     objects ?= {}
 
     if required? and not (required instanceof Array)
@@ -96,10 +96,14 @@ class Manager extends events.EventEmitter
     if prot? and not (prot instanceof Array)
       throw new Error "protected attributes option has to be an array"
 
+    if constructorAttributes? and not (constructorAttributes instanceof Array)
+      throw new Error "constructorAttributes option has to be an array"
+
     clazz = new joap.object.Class "#{name}@#{@xmpp.jid.toString()}",
       creator: creator
       required: required
       protected: prot
+      constructorAttributes: constructorAttributes
 
     for k,v of clazz.prototype when typeof v is "function" and not (k in prot)
       prot.push k
@@ -114,10 +118,19 @@ class Manager extends events.EventEmitter
 
   createInstance: (a, next) =>
     clazz = @classes[a.class]
-    argNames = Manager.getArgNames clazz.creator
     a.attributes ?= {}
-    x = new clazz.creator (a.attributes[n] for n in argNames when n isnt "")...
-    x.id = joap.uniqueId() if not x.id
+    args = []
+    if clazz.constructorAttributes?
+      args = (a.attributes[n] for n in constructorAttributes)
+    else
+      cArgs = Manager.getArgNames clazz.creator
+      if clazz.required?
+        for n,i in cArgs when (n in clazz.required) and a.attributes[n]?
+          args[i] = a.attributes[n]
+    x = new clazz.creator args...
+    prot = clazz.protected or []
+    x[k] = v for k,v of a.attributes when not (k in prot)
+    x.id ?= joap.uniqueId()
     a.instance = x.id
     next null, a, x
 
