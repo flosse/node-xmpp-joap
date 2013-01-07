@@ -90,6 +90,12 @@ class Manager extends events.EventEmitter
     prot = opts.protected
     objects ?= {}
 
+    if required? and not (required instanceof Array)
+      throw new Error "required attributes option has to be an array"
+
+    if prot? and not (prot instanceof Array)
+      throw new Error "protected attributes option has to be an array"
+
     clazz = new joap.object.Class "#{name}@#{@xmpp.jid.toString()}",
       creator: creator
       required: required
@@ -316,10 +322,12 @@ class Manager extends events.EventEmitter
     err
 
   areRequiredAttributes: (a, next) =>
-    for r in @classes[a.class].required
-      if not a.attributes?[r]?
-        err = new joap.Error "Invalid constructor parameters", 406
-        break
+    req = @classes[a.class].required
+    if req?
+      for r in req
+        if not a.attributes?[r]?
+          err = new joap.Error "Invalid constructor parameters", 406
+          break
     next err, a
 
   areExistingAttributes: (a, inst, next) =>
@@ -332,10 +340,11 @@ class Manager extends events.EventEmitter
 
   areWritableAttributes: (a, next) =>
     p = @classes[a.class].protected
-    for k,v of a.attributes
-      if k in p
-        err = new joap.Error "Attribute '#{k}' of class '#{a.class}' is not writeable", 406
-        break
+    if p?
+      for k,v of a.attributes
+        if k in p
+          err = new joap.Error "Attribute '#{k}' of class '#{a.class}' is not writeable", 406
+          break
     next err, a
 
   sendError: (err, a) =>
