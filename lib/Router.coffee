@@ -18,13 +18,21 @@ class Router extends events.EventEmitter
 
         action = joap.parse iq.children?[0]
 
-        to = new JID iq.attrs.to
+        try
+          from = new JID iq.attrs.from
+          to   = new JID iq.attrs.to
+        catch e
+          console.error "invalid JIDs in IQ stanza"
+          if iq.attrs.from?
+            action.from = iq.attrs.from
+            action.iq   = iq
+            @sendError (new Error "invalid 'to' attribute in IQ stanza"), action
 
-        if action?.type?
+        if action?.type? and to? and from?
 
           action.to       = to
           action.iq       = iq
-          action.from     = new JID iq.attrs.from
+          action.from     = from
           action.class    = to.user
           action.instance = to.resource
 
