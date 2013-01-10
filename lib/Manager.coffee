@@ -30,6 +30,10 @@ class Manager extends events.EventEmitter
     args = fn.toString().match(/function\b[^(]*\(([^)]*)\)/)[1]
     args.split /\s*,\s*/
 
+  #TODO: instead of overwriting we should add a method like
+  # registerMethod = (event, fn) ->
+  # registerMethod 'beforeAdd', (a, next) ->
+
   # override if you want to manipulate the request
   beforeAdd: (a, next) -> next null, a
 
@@ -130,6 +134,7 @@ class Manager extends events.EventEmitter
     x = new clazz.creator args...
     prot = clazz.protected or []
     x[k] = v for k,v of a.attributes when not (k in prot)
+    # TODO: we should not assign the id to the instance
     x.id ?= joap.uniqueId()
     a.instance = x.id
     next null, a, x

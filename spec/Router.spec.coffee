@@ -45,3 +45,21 @@ describe "Router", ->
       done = true
     xmppClient.send @request
     waitsFor -> done
+
+  it "supports custom joap actions", ->
+    @request = new ltx.Element "iq",
+      id:"invalid_req"
+      from: "client@example.tld"
+      to: "class@comp.example.tld"
+      type:'set'
+    @request.c "foo", xmlns:JOAP_NS
+    done = false
+    @router.on "foo", (action) =>
+      @router.sendResponse action, (new ltx.Element "customdata", myAttrs: "custom response")
+
+    xmppClient.onData = (data) ->
+      data = data.getChild("foo").getChild("customdata")
+      (expect data.attrs.myAttrs).toEqual "custom response"
+      done = true
+    xmppClient.send @request
+    waitsFor -> done

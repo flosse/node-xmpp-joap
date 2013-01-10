@@ -20,7 +20,7 @@ class Parser
     if @hasJOAPNS xml then xml.getName().toLowerCase()
     else if Parser.isRPCStanza xml then "rpc"
 
-  @isCustomJOAPAction: (name) -> name isnt "" and not (name in JOAP_STANZAS)
+  @isCustomJOAPAction: (name) -> not (name in JOAP_STANZAS)
 
   @isJOAPStanza: (xml) -> not @isCustomJOAPAction(xml.name) and @hasJOAPNS xml
 

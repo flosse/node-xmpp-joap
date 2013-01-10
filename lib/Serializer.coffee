@@ -52,6 +52,10 @@ class Serializer
               if val.timestamp?
                 el.c("timestamp").t(val.timestamp).up()
             el
+          else
+            if val?
+              el.cnode(@serialize val)
+            el
 
       else if action.type is "rpc"
         new stanza.MethodResponse val
@@ -75,6 +79,8 @@ class Serializer
         when "object"
           if val instanceof Array
             new stanza.Array val
+          else if val instanceof Element
+            val
           else
             new stanza.Struct val
     else ""
