@@ -26,3 +26,5 @@ class JOAPError extends Error
     @name = "JOAPError"
 
 exports.Error = JOAPError
+
+exports.XML_NS = "jabber:iq:joap"
