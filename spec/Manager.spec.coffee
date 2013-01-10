@@ -242,7 +242,11 @@ describe "Manager", ->
   describe "edit", ->
 
     class User
-      constructor: (@name, @age) -> @id = "foo"
+      constructor: (@name, @age) ->
+        @id = "foo"
+        @instMethod = ->
+      myMethod: ->
+      @classMethod: ->
 
     beforeEach ->
       @mgr = new joap.Manager xmppComp
@@ -265,6 +269,21 @@ describe "Manager", ->
     it "returns an error if specified object attributes are not writeable", ->
       @request.getChild("edit").cnode(new joap.stanza.Attribute "protected", "oof")
       @result = createErrorIq "edit", 406, "Attribute 'protected' of class 'user' is not writeable", "user", "foo"
+      run.call @, compare
+
+    it "returns an error if specified object attribute is a method", ->
+      @request.getChild("edit").cnode(new joap.stanza.Attribute "myMethod", "fn")
+      @result = createErrorIq "edit", 406, "Attribute 'myMethod' of class 'user' is not writeable", "user", "foo"
+      run.call @, compare
+
+    it "returns an error if specified object attribute is an instance method", ->
+      @request.getChild("edit").cnode(new joap.stanza.Attribute "instMethod", "fn")
+      @result = createErrorIq "edit", 406, "Attribute 'instMethod' of class 'user' is not writeable", "user", "foo"
+      run.call @, compare
+
+    it "returns an error if specified object attribute is a class method", ->
+      @request.getChild("edit").cnode(new joap.stanza.Attribute "classMethod", "fn")
+      @result = createErrorIq "edit", 406, "Attribute 'classMethod' of class 'user' is not writeable", "user", "foo"
       run.call @, compare
 
     it "changes the specified attributes", ->
