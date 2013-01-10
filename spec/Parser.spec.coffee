@@ -39,11 +39,13 @@ describe "Parser", ->
 
       it "returns an object with type informations", ->
         describe = ltx.parse "<describe xmlns='jabber:iq:joap'/>"
+        unknown = ltx.parse "<foo xmlns='jabber:iq:joap'/>"
         rpc = ltx.parse "<query xmlns='jabber:iq:rpc'><methodCall>" +
           "<methodName>test</methodName></methodCall></query>"
 
         (expect joap.Parser.parse(describe).type).toEqual "describe"
         (expect joap.Parser.parse(rpc).type).toEqual "rpc"
+        (expect joap.Parser.parse(unknown).type).toEqual "foo"
 
       it "returns the parsed attribute if available", ->
         read1 = ltx.parse "<read xmlns='jabber:iq:joap'>" +
