@@ -368,7 +368,7 @@ class Manager extends events.EventEmitter
 
   sendResponse: (a, data, next) =>
     @router.sendResponse a, data
-    next null
+    next? null
 
   sendInternalServerError: (err, a) ->
 
