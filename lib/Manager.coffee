@@ -44,19 +44,8 @@ class Manager extends events.EventEmitter
     @_handlers.leave[action] ?= []
     @_handlers.leave[action].push fn
 
-  before: (a, next) =>
-    tasks = @_handlers.enter[a.type] or []
-    async.waterfall [
-      (cb) -> cb null, a
-      tasks...
-    ], next
-
-  after: (a, data, next) =>
-    tasks = @_handlers.leave[a.type] or []
-    async.waterfall [
-      (cb) -> cb null, a, data
-      tasks...
-    ], next
+  before: (a) => @_handlers.enter[a.type] or []
+  after:  (a) => @_handlers.leave[a.type] or []
 
   # override if you want to use a database
   saveInstance: (a, obj, next) =>
@@ -154,7 +143,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @before
+      @before(a)...
       @loadInstance
       @areExistingAttributes
       (a, inst, next) ->
@@ -169,6 +158,7 @@ class Manager extends events.EventEmitter
               res.__static__[k] if k.slice(0,2) isnt "__"
           res[k] = v for k,v of inst when typeof v isnt "function"
         next null, a, res
+      @after(a)...
       @sendResponse
     ], (err) => @sendError err, a
 
@@ -179,10 +169,11 @@ class Manager extends events.EventEmitter
       @isClassAddress
       @classExists
       @areRequiredAttributes
-      @before
+      @before(a)...
       @createInstance
       @saveInstance
       (a, next) => next null, a, @getAddress(a.class, a.instance)
+      @after(a)...
       @sendResponse
     ], (err) => @sendError err, a
 
@@ -194,7 +185,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @before
+      @before(a)...
       @loadInstance
       @areWritableAttributes
       (a, inst, next) =>
@@ -204,6 +195,7 @@ class Manager extends events.EventEmitter
         next null, a, inst
       @saveInstance
       (a, next) => next null, a, a.newAddress
+      @after(a)...
       @sendResponse
     ], (err) => @sendError err, a
 
@@ -213,7 +205,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @before
+      @before(a)...
       @deleteInstance
       @sendResponse
     ], (err) => @sendError err, a
@@ -222,9 +214,10 @@ class Manager extends events.EventEmitter
     async.waterfall [
       (next) -> next null, a
       @grant
-      @before
+      @before(a)...
       @checkTarget
       @createDescription
+      @after(a)...
       @sendResponse
     ], (err) => @sendError err, a
 
@@ -235,11 +228,12 @@ class Manager extends events.EventEmitter
       @isClassAddress
       @classExists
       @isValidSearch
-      @before
+      @before(a)...
       @queryInstances
       (a, items, next) =>
         addresses = (@getAddress a.class, id for id in items) if items?
         next null, a, addresses
+      @after(a)...
       @sendResponse
     ], (err) => @sendError err, a
 
@@ -247,9 +241,10 @@ class Manager extends events.EventEmitter
     async.waterfall [
       (next) -> next null, a
       @grant
-      @before
+      @before(a)...
       @checkTarget
       @execRPC
+      @after(a)...
       @sendResponse
     ], (err) => @sendError err, a
 
@@ -371,9 +366,9 @@ class Manager extends events.EventEmitter
     if err.code or a.type is "rpc" then @router.sendError err, a
     else @sendInternalServerError err, a
 
-  sendResponse: (a, data) =>
-    @after a, data, (err, a, data) =>
-      @router.sendResponse a, data
+  sendResponse: (a, data, next) =>
+    @router.sendResponse a, data
+    next null
 
   sendInternalServerError: (err, a) ->
 
