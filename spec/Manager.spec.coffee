@@ -63,7 +63,7 @@ describe "Manager", ->
 
     mgr = new joap.Manager xmppComp
     (expect typeof mgr.classes).toEqual "object"
-    (expect typeof mgr.objects).toEqual "object"
+    (expect typeof mgr._objects).toEqual "object"
 
   describe "registration of classes", ->
 
@@ -134,7 +134,7 @@ describe "Manager", ->
       @result.c("add", xmlns:JOAP_NS).c("newAddress").t("user@#{compJID}/foo")
       run.call @, (result) ->
         compare.call @, result
-        instance = @mgr.objects.user.foo
+        instance = @mgr._objects.user.foo
         (expect instance.id).toEqual "foo"
         (expect instance.name).toEqual "Markus"
         (expect instance.age).toEqual 99
@@ -151,7 +151,7 @@ describe "Manager", ->
       @result.c("add", xmlns:JOAP_NS).c("newAddress").t("user@#{compJID}/foo")
       run.call @, (result) ->
         compare.call @, result
-        instance = @mgr.objects.user.foo
+        instance = @mgr._objects.user.foo
         (expect instance.name).toEqual "Markus"
         (expect instance.age).toEqual 99
 
@@ -253,7 +253,7 @@ describe "Manager", ->
       @mgr.addClass "user", User,
         required: ["name"]
         protected: ["protected"]
-      @mgr.objects.user.foo = new User "Markus", 123
+      @mgr._objects.user.foo = new User "Markus", 123
       @request = createRequest "edit", "user", "foo"
 
     it "returns an error if you are not authorized", ->
@@ -297,7 +297,7 @@ describe "Manager", ->
         type:'result'
       @result.c("edit", {xmlns: JOAP_NS})
       run.call @, ->
-        instance = @mgr.objects.user.foo
+        instance = @mgr._objects.user.foo
         (expect instance.name).toEqual "oof"
         (expect instance.new).toEqual "attr"
 
@@ -313,9 +313,26 @@ describe "Manager", ->
         .c("newAddress").t("user@#{compJID}/newId")
       run.call @, (res)->
         compare.call @, res
-        instance = @mgr.objects.user.newId
+        instance = @mgr._objects.user.newId
         (expect typeof instance).toEqual "object"
         (expect instance.id).toEqual "newId"
+
+    it "can be modified before editing", ->
+      @request.getChild("edit").cnode(new joap.stanza.Attribute "foo", "bar").up()
+      @result = new ltx.Element "iq",
+        to:clientJID
+        from:"user@#{compJID}/foo"
+        id:'edit_id_0'
+        type:'result'
+      @result.c("edit", {xmlns: JOAP_NS})
+      @mgr.onEnter "edit", (a, next) ->
+        a.attributes.foo = "modified"
+        next null, a
+      (expect @mgr._handlers.enter.edit.length).toEqual 1
+      run.call @, =>
+        instance = @mgr._objects.user.foo
+        (expect instance.foo).toEqual "modified"
+
 
   describe "delete", ->
 
@@ -327,7 +344,7 @@ describe "Manager", ->
       @mgr.addClass "user", User,
         required: ["name"]
         protected: ["id"]
-      @mgr.objects.user.foo = new User "Markus", 123
+      @mgr._objects.user.foo = new User "Markus", 123
       @request = createRequest "delete", "user", "foo"
 
     it "returns an error if you are not authorized", ->
@@ -352,7 +369,7 @@ describe "Manager", ->
         id:'delete_id_0'
         type:'result'
       @result.c("delete", {xmlns: JOAP_NS})
-      users = @mgr.objects.user
+      users = @mgr._objects.user
       (expect users.foo).toBeDefined()
       run.call @, ->
         (expect users.foo).toBeUndefined()
@@ -368,7 +385,7 @@ describe "Manager", ->
       @mgr.addClass "user", User,
         required: ["name"]
         protected: ["id"]
-      @mgr.objects.user.foo = new User "Markus", 123
+      @mgr._objects.user.foo = new User "Markus", 123
       @request = createRequest "describe"
 
     it "returns the describtion of the object server", ->
@@ -404,7 +421,7 @@ describe "Manager", ->
         required: ["name", "age"]
         protected: ["id"]
       @mgr.addServerMethod "serverMethod", (param) -> 2 * param
-      @mgr.objects.user.foo = new User "Markus", 432
+      @mgr._objects.user.foo = new User "Markus", 432
 
     it "can handle an instance rpc request", ->
       @request = createRequest "query", "user", "foo"

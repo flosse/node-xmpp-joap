@@ -1,6 +1,6 @@
 ###
 This program is distributed under the terms of the MIT license.
-Copyright 2012 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+Copyright 2012 - 2013 (c) Markus Kohlhase <mail@markus-kohlhase.de>
 ###
 
 events  = require "events"
@@ -21,7 +21,8 @@ class Manager extends events.EventEmitter
     @serverAttributes   = {}
     @serverMethods      = {}
     @classes            = {}
-    @objects            = {}
+    @_objects           = {}
+    @_handlers          = { enter: {}, leave:{} }
     @router = new joap.Router @xmpp
     @router.on "describe", @onDescribe
     @router.on "add",      @onAdd
@@ -35,35 +36,36 @@ class Manager extends events.EventEmitter
     args = fn.toString().match(/function\b[^(]*\(([^)]*)\)/)[1]
     args.split /\s*,\s*/
 
-  # override if you want to manipulate the request
-  beforeAdd: (a, next) -> next null, a
+  onEnter: (action, fn) =>
+    @_handlers.enter[action] ?= []
+    @_handlers.enter[action].push fn
 
-  # override if you want to manipulate the reading of instances
-  beforeRead: (a, next) -> next null, a
+  onLeave: (action, fn) ->
+    @_handlers.leave[action] ?= []
+    @_handlers.leave[action].push fn
 
-  # override if you want to manipulate the deletion of instances
-  beforeDelete: (a, next) -> next null, a
+  before: (a, next) =>
+    tasks = @_handlers.enter[a.type] or []
+    async.waterfall [
+      (cb) -> cb null, a
+      tasks...
+    ], next
 
-  # override if you want to manipulate the description of instances
-  beforeDescribe: (a, next) -> next null, a
-
-  # override if you want to manipulate the search of instances
-  beforeSearch: (a, next) -> next null, a
-
-  # override if you want to manipulate the editing of instances
-  beforeEdit: (a, next) -> next null, a
-
-  # override if you want to manipulate the rpc request
-  beforeRPC: (a, next) -> next null, a
+  after: (a, data, next) =>
+    tasks = @_handlers.leave[a.type] or []
+    async.waterfall [
+      (cb) -> cb null, a, data
+      tasks...
+    ], next
 
   # override if you want to use a database
   saveInstance: (a, obj, next) =>
-    @objects[a.class][obj.id] = obj
+    @_objects[a.class][obj.id] = obj
     next null, a
 
   # override if you want to use a database
   loadInstance: (a, next) =>
-    inst = @objects[a.class]?[a.instance]
+    inst = @_objects[a.class]?[a.instance]
     if not inst?
       err = new joap.Error "Object '#{a.instance}' does not exists", 404
     next err, a, inst
@@ -72,11 +74,11 @@ class Manager extends events.EventEmitter
   queryInstances: (a, next) =>
     if a.attributes?
       items = []
-      for id, o of @objects[a.class]
+      for id, o of @_objects[a.class]
         items.push id for k,v of a.attributes when o[k] is v
       next null, a, items
     else
-      next null, a, (k for k,v of @objects[a.class])
+      next null, a, (k for k,v of @_objects[a.class])
 
   # override if you want to use a database
   deleteInstance: (a, next) =>
@@ -84,7 +86,7 @@ class Manager extends events.EventEmitter
       if err?
         next err, a
       else
-        delete @objects[a.class][a.instance]
+        delete @_objects[a.class][a.instance]
         next null, a
 
   # Public method to override by the main application
@@ -115,7 +117,7 @@ class Manager extends events.EventEmitter
 
     if typeof creator is "function" and not @classes[name]?
       @classes[name] = clazz
-      @objects[name] = objects
+      @_objects[name] = objects
       true
     else false
 
@@ -152,7 +154,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @beforeRead
+      @before
       @loadInstance
       @areExistingAttributes
       (a, inst, next) ->
@@ -177,7 +179,7 @@ class Manager extends events.EventEmitter
       @isClassAddress
       @classExists
       @areRequiredAttributes
-      @beforeAdd
+      @before
       @createInstance
       @saveInstance
       (a, next) => next null, a, @getAddress(a.class, a.instance)
@@ -192,7 +194,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @beforeEdit
+      @before
       @loadInstance
       @areWritableAttributes
       (a, inst, next) =>
@@ -211,7 +213,7 @@ class Manager extends events.EventEmitter
       @grant
       @isInstanceAddress
       @classExists
-      @beforeDelete
+      @before
       @deleteInstance
       @sendResponse
     ], (err) => @sendError err, a
@@ -220,7 +222,7 @@ class Manager extends events.EventEmitter
     async.waterfall [
       (next) -> next null, a
       @grant
-      @beforeDescribe
+      @before
       @checkTarget
       @createDescription
       @sendResponse
@@ -233,7 +235,7 @@ class Manager extends events.EventEmitter
       @isClassAddress
       @classExists
       @isValidSearch
-      @beforeSearch
+      @before
       @queryInstances
       (a, items, next) =>
         addresses = (@getAddress a.class, id for id in items) if items?
@@ -245,7 +247,7 @@ class Manager extends events.EventEmitter
     async.waterfall [
       (next) -> next null, a
       @grant
-      @beforeRPC
+      @before
       @checkTarget
       @execRPC
       @sendResponse
@@ -369,7 +371,9 @@ class Manager extends events.EventEmitter
     if err.code or a.type is "rpc" then @router.sendError err, a
     else @sendInternalServerError err, a
 
-  sendResponse: (a, data) => @router.sendResponse a, data
+  sendResponse: (a, data) =>
+    @after a, data, (err, a, data) =>
+      @router.sendResponse a, data
 
   sendInternalServerError: (err, a) ->
 
