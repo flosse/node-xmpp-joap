@@ -30,6 +30,10 @@ describe "Parser", ->
     (expect joap.Parser.getType search).toEqual "search"
     (expect joap.Parser.getType rpc).toEqual "rpc"
 
+  it "checks custom jaop actions", ->
+    (expect joap.Parser.isCustomJOAPAction "read").toEqual false
+    (expect joap.Parser.isCustomJOAPAction "foo").toEqual true
+
   describe "parse", ->
 
     it "should be accessible", ->
