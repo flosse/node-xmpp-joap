@@ -8,6 +8,11 @@ joap    = require "./node-xmpp-joap"
 ltx     = require "ltx"
 async   = require "async"
 
+isMethod = (clz, inst, key) ->
+  (typeof clz[key]   is "function") or
+  (typeof clz::[key] is "function") or
+  (typeof inst[key]  is "function")
+
 class Manager extends events.EventEmitter
 
   constructor: (@xmpp) ->
@@ -188,8 +193,8 @@ class Manager extends events.EventEmitter
       @isInstanceAddress
       @classExists
       @beforeEdit
-      @areWritableAttributes
       @loadInstance
+      @areWritableAttributes
       (a, inst, next) =>
         inst[k] = v for k,v of a.attributes
         if a.attributes.id?
@@ -351,14 +356,14 @@ class Manager extends events.EventEmitter
           break
     next err, a, inst
 
-  areWritableAttributes: (a, next) =>
-    p = @classes[a.class].protected
-    if p?
-      for k,v of a.attributes
-        if k in p
-          err = new joap.Error "Attribute '#{k}' of class '#{a.class}' is not writeable", 406
-          break
-    next err, a
+  areWritableAttributes: (a, inst, next) =>
+    clz = @classes[a.class]
+    p = clz.protected or []
+    for k,v of a.attributes
+      if (k in p) or isMethod clz.creator, inst, k
+        err = new joap.Error "Attribute '#{k}' of class '#{a.class}' is not writeable", 406
+        break
+    next err, a, inst
 
   sendError: (err, a) =>
     if err.code or a.type is "rpc" then @router.sendError err, a
