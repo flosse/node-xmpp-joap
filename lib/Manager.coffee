@@ -366,9 +366,7 @@ class Manager extends events.EventEmitter
     if err.code or a.type is "rpc" then @router.sendError err, a
     else @sendInternalServerError err, a
 
-  sendResponse: (a, data, next) =>
-    @router.sendResponse a, data
-    next? null
+  sendResponse: (a, data) => @router.sendResponse a, data
 
   sendInternalServerError: (err, a) ->
 

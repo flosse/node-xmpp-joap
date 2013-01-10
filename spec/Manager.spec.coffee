@@ -333,6 +333,19 @@ describe "Manager", ->
         instance = @mgr._objects.user.foo
         (expect instance.foo).toEqual "modified"
 
+    it "returns an error if a modifying function failed", ->
+      @request.getChild("edit").cnode(new joap.stanza.Attribute "foo", "bar").up()
+      @result = new ltx.Element "iq",
+        to:clientJID
+        from:"user@#{compJID}/foo"
+        id:'edit_id_0'
+        type:'result'
+      @result.c("edit", {xmlns: JOAP_NS})
+      @mgr.onEnter "edit", (a, next) -> next (new Error "an error occoured"), a
+      (expect @mgr._handlers.enter.edit.length).toEqual 1
+      run.call @, (res) ->
+        (expect res.getChild "error").toBeDefined()
+
 
   describe "delete", ->
 
