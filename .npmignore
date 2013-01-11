@@ -3,3 +3,4 @@ spec/*.coffee
 Cakefile
 .npmignore
 node_modules
+example/
