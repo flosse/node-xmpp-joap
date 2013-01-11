@@ -30,6 +30,10 @@ describe "Parser", ->
     (expect joap.Parser.getType search).toEqual "search"
     (expect joap.Parser.getType rpc).toEqual "rpc"
 
+  it "checks custom jaop actions", ->
+    (expect joap.Parser.isCustomJOAPAction "read").toEqual false
+    (expect joap.Parser.isCustomJOAPAction "foo").toEqual true
+
   describe "parse", ->
 
     it "should be accessible", ->
@@ -39,11 +43,13 @@ describe "Parser", ->
 
       it "returns an object with type informations", ->
         describe = ltx.parse "<describe xmlns='jabber:iq:joap'/>"
+        unknown = ltx.parse "<foo xmlns='jabber:iq:joap'/>"
         rpc = ltx.parse "<query xmlns='jabber:iq:rpc'><methodCall>" +
           "<methodName>test</methodName></methodCall></query>"
 
         (expect joap.Parser.parse(describe).type).toEqual "describe"
         (expect joap.Parser.parse(rpc).type).toEqual "rpc"
+        (expect joap.Parser.parse(unknown).type).toEqual "foo"
 
       it "returns the parsed attribute if available", ->
         read1 = ltx.parse "<read xmlns='jabber:iq:joap'>" +

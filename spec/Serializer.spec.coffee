@@ -82,3 +82,12 @@ describe "Serializer", ->
         "<item>c</item>" +
         "</search>"
 
+    it "serializes custom joap data", ->
+      customAct  = { type: "foo" }
+      customData = { x: "y" }
+      xmlData    = ltx.parse "<cutom><data><foo bar='baz' /></data></cutom>"
+      (expect Serializer.serialize null, customAct).toEqual ltx.parse "<foo xmlns='jabber:iq:joap' />"
+      (expect Serializer.serialize customData, customAct).toEqual ltx.parse "<foo xmlns='jabber:iq:joap' >" +
+        "<struct><member><name>x</name><value><string>y</string></value></member></struct></foo>"
+        (expect Serializer.serialize xmlData, customAct).toEqual ltx.parse "<foo xmlns='jabber:iq:joap' >" +
+        "<cutom><data><foo bar='baz' /></data></cutom>" + "</foo>"

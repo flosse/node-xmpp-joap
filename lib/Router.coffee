@@ -39,8 +39,6 @@ class Router extends events.EventEmitter
           if typeof action.type is "string" and action.type.trim() isnt ""
             @emit action.type, action
             @emit "action", action
-          else
-            @sendError (new joap.Error "stanza #{action.type} is not supported", 406), action
 
   sendError: (err, a) ->
     @send new joap.stanza.ErrorIq a.type, err.code, err.message,

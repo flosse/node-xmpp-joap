@@ -12,15 +12,20 @@ JOAP_STANZAS  = ["describe", "read","add", "edit", "delete", "search"]
 
 class Parser
 
+  @hasJOAPNS: (xml) -> xml.attrs?.xmlns is JOAP_NS
+
+  @hasRPCNS: (xml) -> xml.attrs?.xmlns is RPC_NS
+
   @getType: (xml) ->
-    if Parser.isJOAPStanza xml then xml.getName().toLowerCase()
+    if @hasJOAPNS xml then xml.getName().toLowerCase()
     else if Parser.isRPCStanza xml then "rpc"
 
-  @isJOAPStanza: (xml) ->
-    (xml.name in JOAP_STANZAS and xml.attrs?.xmlns is JOAP_NS)
+  @isCustomJOAPAction: (name) -> not (name in JOAP_STANZAS)
+
+  @isJOAPStanza: (xml) -> not @isCustomJOAPAction(xml.name) and @hasJOAPNS xml
 
   @isRPCStanza: (xml) ->
-    (xml.name is "query" and xml.attrs?.xmlns is RPC_NS)
+    (xml.name is "query" and @hasRPCNS xml)
 
   @parse: (xml) ->
 
@@ -31,10 +36,8 @@ class Parser
 
     else if typeof xml is "object"
 
-      if Parser.isJOAPStanza xml
-        action = {
-          type: Parser.getType xml
-        }
+      if Parser.hasJOAPNS xml
+        action = type: Parser.getType xml
         attrs = {}
 
         a = xml.getChildren "attribute"

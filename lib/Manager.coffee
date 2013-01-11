@@ -126,6 +126,7 @@ class Manager extends events.EventEmitter
     x = new clazz.creator args...
     prot = clazz.protected or []
     x[k] = v for k,v of a.attributes when not (k in prot)
+    # TODO: we should not assign the id to the instance
     x.id ?= joap.uniqueId()
     a.instance = x.id
     next null, a, x
