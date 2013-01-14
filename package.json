@@ -1,6 +1,6 @@
 {
   "name":         "node-xmpp-joap",
-  "version":      "0.0.10",
+  "version":      "0.0.11",
   "main":         "./lib/node-xmpp-joap",
   "description":  "Jabber Object Access Protocol (XEP-0075) library for node-xmpp",
   "author":       "Markus Kohlhase",
