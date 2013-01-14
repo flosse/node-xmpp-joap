@@ -44,6 +44,49 @@ mgr.hasPermission = (action, next) ->
   else next (new joap.Error "You are not allowed to do that :-P"), 403
 ```
 
+### Client
+
+```coffeescript
+xmpp = require "node-xmpp"
+joap = require "node-xmpp-joap"
+
+comp = new xmpp.Component
+  jid       : "mycomponent"
+  password  : "secret"
+  host      : "127.0.0.1"
+  port      : "8888"
+
+# create a new client instance
+c = new joap.Client comp
+
+# requesting the server description
+c.describe "joap.server.tld", (err, iq, parsedDescription) ->
+
+# requesting a class description
+c.describe "user@server.tld", (err, iq, parsedDescription) ->
+
+# creating a new instance
+c.add "use@server.tld", { name:"My Name" }, (err, iq, instanceAddress) ->
+
+# reading an instance
+c.read "user@server.tld/instanceId", (err, iq, parsedResult) ->
+
+# reading only a few properties of an instance
+c.read "user@server.tld/instanceId", ["email", "age"], (err, iq, parsedResult) ->
+
+# modifying properties of an instance
+c.edit "user@server.tld/instanceId", { age: 27 }, (err, iq) ->
+
+# deleting an instance
+c.delete "user@server.tld/instanceId", (err, iq) ->
+
+# searching for instances
+c.search "user@server.tld", {age: 60} , err, iq, arrayOfInstanceIDs) ->
+
+# performing a method call
+c.methodCall "myMethod", "user@server.tld/instanceId", ["param1","param2"], (err, iq, result) ->
+```
+
 #### Persistence
 
 If you want to persist the objects in a database you can simply override the
