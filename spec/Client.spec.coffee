@@ -16,6 +16,9 @@ describe "Client", ->
       @channels[channel] = cb
     jid: compJID
 
+  beforeEach ->
+    @c = new joap.Client xmppComp
+
   it "is a class", ->
    (expect typeof joap.Client).toEqual "function"
 
@@ -30,10 +33,7 @@ describe "Client", ->
     (expect typeof c.edit).toEqual "function"
     (expect typeof c.search).toEqual "function"
 
-  describe "describe JOAP description method", ->
-
-    beforeEach ->
-      @c = new joap.Client xmppComp
+  describe "description method", ->
 
     it "sends a correct iq", ->
 
@@ -78,4 +78,24 @@ describe "Client", ->
       (expect iq.tree().name).toEqual 'iq'
       (expect iq.tree().children[0].toString()).toEqual '<describe ' +
         'xmlns="jabber:iq:joap"/>'
+      waitsFor -> done
+
+  describe "add method", ->
+
+    it "sends a correct iq", ->
+
+      done = false
+      iq = null
+      xmppComp.send = (req) ->
+        iq = req
+        res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
+        res.c("add", xmlns: JOAP_NS)
+          .c("newAddress").t("class@example.org/instance")
+        xmppComp.channels.stanza res
+
+      @c.add "class@c.domain.tld", (err, s, res) ->
+        (expect s.tree().name).toEqual 'iq'
+        (expect res).toEqual "class@example.org/instance"
+        done = true
+
       waitsFor -> done

@@ -6,6 +6,7 @@ Copyright 2012 - 2013 (c) Markus Kohlhase <mail@markus-kohlhase.de>
 ltx  = require "ltx"
 joap = require "./node-xmpp-joap"
 uuid = require 'node-uuid'
+JID  = require('node-xmpp').JID
 
 createIq = (type, to, customAttrs) ->
   iqType = if (type in ["read", "search", "describe"]) then "get" else "set"
@@ -24,7 +25,7 @@ sendRequest = (type, to, cb, opt={}) ->
      err = if res.attrs.type is 'error'
        new Error iq.getChildText "error"
      else null
-     cb? err, res, opt.onResult? res
+     cb? err, res, (if not err? then opt.onResult? res)
  @xmpp.send iq
 
 parseAttributeDescription = (d) ->
@@ -65,6 +66,21 @@ parseDescription = (iq) ->
           classes.push = c.text()
   result
 
+addXMLAttributes = (iq, attrs) ->
+  return if not attrs?
+  if attrs instanceof Array
+    return console.warn "Attribute parameter is not an object"
+  else if typeof attrs is "object"
+    for k,v of attrs
+      iq.c("attribute")
+        .c("name").t(k).up()
+        .cnode(joap.Parser.parse v).up().up()
+
+parseNewAddress = (iq) ->
+  a = iq.getChild("add")?.getChild("newAddress")
+  if a? then  new JID(a.text()).toString()
+  else undefined
+
 class JOAPClient
 
   constructor: (@xmpp) ->
@@ -77,6 +93,10 @@ class JOAPClient
   read: (instance, limits, cb) ->
 
   add: (clazz, attrs, cb) ->
+    cb = attrs; attrs=null if typeof attrs is "function"
+    sendRequest.call @, "add", clazz, cb,
+      beforeSend: (iq) -> addXMLAttributes iq, attrs
+      onResult: parseNewAddress
 
   edit: (instance, attrs, cb) ->
 
