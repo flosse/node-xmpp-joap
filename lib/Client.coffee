@@ -92,6 +92,25 @@ parseSearch = (iq) ->
   items = iq.getChildren("item")
   (new JID(i.text()).toString() for i in items)
 
+addRPCElements = (iq, method, params=[]) ->
+  throw new TypeError unless typeof method is "string"
+  iq.c("methodCall").c("methodName").t(method).up()
+  if not (params instanceof Array)
+    console?.warn? "No parameters added: parameter is not an array"
+    return
+  if params.length > 0
+    iq.c("params")
+    for p in params
+      iq.c("param")
+        .cnode(joap.Serializer.serialize p).up().up()
+
+parseRPCParams = (iq) ->
+  joap.Parser.parse iq
+    .getChild("methodResponse")
+    .getChild("params")
+    .getChild("param")
+    .getChild("value")
+
 class JOAPClient
 
   constructor: (@xmpp) ->
@@ -127,5 +146,10 @@ class JOAPClient
     sendRequest.call @, "search", clazz, cb,
       beforeSend: (iq) -> addXMLAttributes iq, attrs
       onResult: parseSearch
+
+  methodCall: (method, address, params, cb) ->
+    sendRequest.call @, "query", address, cb,
+      beforeSend: (iq) -> addRPCElements iq, method, params
+      onResult: parseRPCParams
 
 module.exports = JOAPClient

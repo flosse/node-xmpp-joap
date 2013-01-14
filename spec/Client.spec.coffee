@@ -158,3 +158,27 @@ describe "Client", ->
         done = true
 
       waitsFor -> done
+
+  describe "rpc method", ->
+    it "sends a correct iq", ->
+
+      done = false
+      iq = null
+      xmppComp.send = (req) ->
+        iq = req.tree()
+        (expect iq.getChild("query")
+          .getChild("methodCall")
+          .getChild("methodName").text()).toEqual "myMethod"
+        res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
+        res.c("query", xmlns: RPC_NS)
+          .c("methodResponse")
+            .c("params")
+              .c("param")
+                .c("value").c("int").t(7)
+        xmppComp.channels.stanza res.tree()
+
+      @c.methodCall "myMethod", "class@c.domain.tld", ["avalue"] , (err, s, res) ->
+        (expect res).toEqual 7
+        done = true
+
+      waitsFor -> done
