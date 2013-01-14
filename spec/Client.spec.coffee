@@ -140,3 +140,21 @@ describe "Client", ->
         done = true
 
       waitsFor -> done
+
+  describe "search method", ->
+    it "sends a correct iq", ->
+
+      done = false
+      iq = null
+      xmppComp.send = (req) ->
+        iq = req
+        res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
+        res.c("search", xmlns: JOAP_NS)
+          .c("item").t("x@y.z/0")
+        xmppComp.channels.stanza res
+
+      @c.search "class@c.domain.tld", { "magic":6 } , (err, s, res) ->
+        (expect res).toEqual ["x@y.z/0"]
+        done = true
+
+      waitsFor -> done

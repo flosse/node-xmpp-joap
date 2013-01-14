@@ -88,6 +88,10 @@ parseAttributes = (iq) ->
     data[key] = joap.Parser.parse a.getChild("value")
   data
 
+parseSearch = (iq) ->
+  items = iq.getChildren("item")
+  (new JID(i.text()).toString() for i in items)
+
 class JOAPClient
 
   constructor: (@xmpp) ->
@@ -118,5 +122,10 @@ class JOAPClient
       onResult: parseNewAddress
 
   search: (clazz, attrs, cb) ->
+    if typeof attrs is "function"
+      cb = attrs; attrs=null
+    sendRequest.call @, "search", clazz, cb,
+      beforeSend: (iq) -> addXMLAttributes iq, attrs
+      onResult: parseSearch
 
 module.exports = JOAPClient
