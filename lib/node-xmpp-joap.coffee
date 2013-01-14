@@ -1,8 +1,13 @@
-# This program is distributed under the terms of the MIT license.
-# Copyright 2012 - 2013 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
+This program is distributed under the terms of the MIT license.
+Copyright 2012 - 2013 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
+
+uuid = require 'node-uuid'
 
 exports.Router  = require "./Router"
 exports.Manager = require "./Manager"
+exports.Client  = require "./Client"
 
 exports.object = require "./JOAPObjects"
 exports.stanza = require "./stanza"
@@ -18,7 +23,7 @@ Serializer = require "./Serializer"
 exports.Serializer = Serializer
 exports.serialize = Serializer.serialize
 
-exports.uniqueId = require 'node-uuid'
+exports.uniqueId = -> uuid.v4()
 
 class JOAPError extends Error
 
@@ -27,4 +32,9 @@ class JOAPError extends Error
 
 exports.Error = JOAPError
 
-exports.XML_NS = "jabber:iq:joap"
+JOAP_NS = "jabber:iq:joap"
+RPC_NS  = "jabber:iq:rpc"
+
+exports.JOAP_NS = JOAP_NS
+exports.RPC_NS  = RPC_NS
+exports.XML_NS  = JOAP_NS
