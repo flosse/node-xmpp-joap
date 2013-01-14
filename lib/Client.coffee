@@ -25,7 +25,7 @@ sendRequest = (type, to, cb, opt={}) ->
      err = if res.attrs.type is 'error'
        new Error iq.getChildText "error"
      else null
-     cb? err, res, (if not err? then opt.onResult? res)
+     cb? err, res, (if not err? then opt.onResult? res.getChild type)
  @xmpp.send iq
 
 parseAttributeDescription = (d) ->
@@ -46,9 +46,8 @@ parseDesc = (desc) ->
 
 parseDescription = (iq) ->
   result = desc: {}, attributes: {}, methods: {}, classes: []
-  describe = iq.getChild("describe")
-  if describe?
-    for c in describe.children
+  if iq?
+    for c in iq.children
       switch c.name.toLowerCase()
         when "desc"
           result.desc[c.attrs["xml:lang"]] = c.text()
@@ -74,12 +73,20 @@ addXMLAttributes = (iq, attrs) ->
     for k,v of attrs
       iq.c("attribute")
         .c("name").t(k).up()
-        .cnode(joap.Parser.parse v).up().up()
+        .c("value").cnode(joap.Serializer.serialize v).up().up()
 
 parseNewAddress = (iq) ->
-  a = iq.getChild("add")?.getChild("newAddress")
+  a = iq.getChild("newAddress")
   if a? then  new JID(a.text()).toString()
   else undefined
+
+parseAttributes = (iq) ->
+  attrs = iq.getChildren("attribute")
+  data = {}
+  for a in attrs
+    key = a.getChild("name").text()
+    data[key] = joap.Parser.parse a.getChild("value")
+  data
 
 class JOAPClient
 
@@ -91,9 +98,16 @@ class JOAPClient
       onResult: parseDescription
 
   read: (instance, limits, cb) ->
+    if typeof limits is "function"
+      cb = limits; limits = null
+    sendRequest.call @, "read", instance, cb,
+      beforeSend: (iq) -> if limits instanceof Array
+        iq.c("name").t(l).up() for l in limits
+      onResult: parseAttributes
 
   add: (clazz, attrs, cb) ->
-    cb = attrs; attrs=null if typeof attrs is "function"
+    if typeof attrs is "function"
+      cb = attrs; attrs=null
     sendRequest.call @, "add", clazz, cb,
       beforeSend: (iq) -> addXMLAttributes iq, attrs
       onResult: parseNewAddress

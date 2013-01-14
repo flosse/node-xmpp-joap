@@ -87,15 +87,37 @@ describe "Client", ->
       done = false
       iq = null
       xmppComp.send = (req) ->
-        iq = req
+        iq = req.tree()
         res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
         res.c("add", xmlns: JOAP_NS)
           .c("newAddress").t("class@example.org/instance")
         xmppComp.channels.stanza res
 
-      @c.add "class@c.domain.tld", (err, s, res) ->
+      @c.add "class@c.domain.tld", {x:"y"}, (err, s, res) ->
         (expect s.tree().name).toEqual 'iq'
         (expect res).toEqual "class@example.org/instance"
+        done = true
+
+      waitsFor -> done
+
+  describe "read method", ->
+
+    it "sends a correct iq", ->
+
+      done = false
+      iq = null
+      xmppComp.send = (req) ->
+        iq = req
+        res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
+        res.c("read", xmlns: JOAP_NS)
+          .c("attribute")
+            .c("name").t("magic").up()
+            .c("value").c("i4").t(23)
+        xmppComp.channels.stanza res
+
+      @c.read "class@c.domain.tld/x", ["magic"], (err, s, res) ->
+        (expect s.tree().name).toEqual 'iq'
+        (expect res).toEqual {magic: 23}
         done = true
 
       waitsFor -> done
