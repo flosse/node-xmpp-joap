@@ -113,6 +113,9 @@ class JOAPClient
       onResult: parseNewAddress
 
   edit: (instance, attrs, cb) ->
+    sendRequest.call @, "edit", instance, cb,
+      beforeSend: (iq) -> addXMLAttributes iq, attrs
+      onResult: parseNewAddress
 
   search: (clazz, attrs, cb) ->
 

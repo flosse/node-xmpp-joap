@@ -121,3 +121,22 @@ describe "Client", ->
         done = true
 
       waitsFor -> done
+
+  describe "read method", ->
+    it "sends a correct iq", ->
+
+      done = false
+      iq = null
+      xmppComp.send = (req) ->
+        iq = req
+        res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
+        res.c("edit", xmlns: JOAP_NS)
+          .c("newAddress").t("x@y.z/0")
+        xmppComp.channels.stanza res
+
+      @c.edit "class@c.domain.tld/x", { "magic":6 } , (err, s, res) ->
+        (expect s.tree().name).toEqual 'iq'
+        (expect res).toEqual "x@y.z/0"
+        done = true
+
+      waitsFor -> done
