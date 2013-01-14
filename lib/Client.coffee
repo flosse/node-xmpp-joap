@@ -140,6 +140,9 @@ class JOAPClient
       beforeSend: (iq) -> addXMLAttributes iq, attrs
       onResult: parseNewAddress
 
+  delete: (instance, cb) ->
+    sendRequest.call @, "delete", instance, cb
+
   search: (clazz, attrs, cb) ->
     if typeof attrs is "function"
       cb = attrs; attrs=null

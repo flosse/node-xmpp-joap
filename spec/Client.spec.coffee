@@ -182,3 +182,19 @@ describe "Client", ->
         done = true
 
       waitsFor -> done
+
+  describe "delete method", ->
+    it "sends a correct iq", ->
+      done = false
+      iq = null
+      xmppComp.send = (req) ->
+        iq = req.tree()
+        (expect iq.getChild("delete")).toBeDefined()
+        res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
+        res.c("delete", xmlns: JOAP_NS)
+        xmppComp.channels.stanza res
+
+      @c.delete "class@c.domain.tld/inst", (err, s, res) ->
+        done = true
+
+      waitsFor -> done
