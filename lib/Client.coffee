@@ -26,7 +26,10 @@ sendRequest = (type, to, cb, opt={}) ->
  opt.beforeSend? iq
  id = iq.tree().attrs.id
  resultListener = (res) =>
-   if res.name is "iq" and res.attrs.id is id
+   if  res.name        is "iq"                and
+       res.attrs?.type in ['result', 'error'] and
+       res.attrs.id    is id
+
      err = if res.attrs.type is 'error'
        new Error iq.getChildText "error"
      else null
