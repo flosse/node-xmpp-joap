@@ -14,6 +14,7 @@ describe "Client", ->
     onData: (data) ->
     on: (channel, cb) ->
       @channels[channel] = cb
+    removeListener: ->
     jid: compJID
 
   beforeEach ->
