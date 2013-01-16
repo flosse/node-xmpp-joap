@@ -14,18 +14,25 @@ createIq = (type, to, customAttrs) ->
   attrs  = xmlns: xmlns
   attrs[k]=v for k,v of attrs when v? if customAttrs?
   id = uuid.v4()
-  (new ltx.Element "iq", to: to, type:iqType, id: id).c(type, attrs)
+  (new ltx.Element "iq",
+    to: to.toString()
+    from: @xmpp.jid.toString()
+    type:iqType
+    id: id
+  ).c(type, attrs)
 
 sendRequest = (type, to, cb, opt={}) ->
- iq = createIq type, to, opt.attrs
+ iq = createIq.call @, type, to, opt.attrs
  opt.beforeSend? iq
  id = iq.tree().attrs.id
- @xmpp.on "stanza", (res) ->
+ resultListener = (res) =>
    if res.name is "iq" and res.attrs.id is id
      err = if res.attrs.type is 'error'
        new Error iq.getChildText "error"
      else null
      cb? err, res, (if not err? then opt.onResult? res.getChild type)
+     @xmpp.removeListener "stanza", resultListener
+ @xmpp.on "stanza", resultListener
  @xmpp.send iq
 
 parseAttributeDescription = (d) ->
