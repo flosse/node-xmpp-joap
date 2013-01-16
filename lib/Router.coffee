@@ -14,7 +14,7 @@ class Router extends events.EventEmitter
 
     @xmpp.on "stanza", (iq) =>
 
-      if iq.name is "iq"
+      if iq.name is "iq" and iq.attrs?.type in ["set","get"]
 
         action = joap.parse iq.children?[0]
 
