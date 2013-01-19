@@ -21,22 +21,29 @@ createIq = (type, to, customAttrs) ->
     id: id
   ).c(type, attrs)
 
-sendRequest = (type, to, cb, opt={}) ->
- iq = createIq.call @, type, to, opt.attrs
- opt.beforeSend? iq
- id = iq.tree().attrs.id
- resultListener = (res) =>
-   if  res.name        is "iq"                and
-       res.attrs?.type in ['result', 'error'] and
-       res.attrs.id    is id
+getError = (res) ->
+  if res.attrs.type isnt 'error' then null
+  else
+    tag = res.getChild "error"
+    errMsg =
+      if tag? then "#{tag.text()}, Error Code: #{tag.attrs.code} "
+      else "unknown error"
+    new Error errMsg
 
-     err = if res.attrs.type is 'error'
-       new Error iq.getChildText "error"
-     else null
-     cb? err, res, (if not err? then opt.onResult? res.getChild type)
-     @xmpp.removeListener "stanza", resultListener
- @xmpp.on "stanza", resultListener
- @xmpp.send iq
+sendRequest = (type, to, cb, opt={}) ->
+  iq = createIq.call @, type, to, opt.attrs
+  opt.beforeSend? iq
+  id = iq.tree().attrs.id
+  resultListener = (res) =>
+    if  res.name        is "iq"                and
+        res.attrs?.type in ['result', 'error'] and
+        res.attrs.id    is id
+
+      cb? getError(res), res, (if not err? then opt.onResult? res.getChild type)
+      @xmpp.removeListener "stanza", resultListener
+
+  @xmpp.on "stanza", resultListener
+  @xmpp.send iq
 
 parseAttributeDescription = (d) ->
   name: d.getChild("name")?.text()
