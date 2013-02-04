@@ -122,11 +122,22 @@ addRPCElements = (iq, method, params=[]) ->
         .cnode(joap.Serializer.serialize p).up().up()
 
 parseRPCParams = (iq) ->
-  joap.Parser.parse iq
-    .getChild("methodResponse")
-    .getChild("params")
-    .getChild("param")
-    .getChild("value")
+  if iq.tree().attrs.type is "result"
+    v = iq.getChild("methodResponse")?.
+      getChild("params")?.
+      getChild("param")?.
+      getChild("value")
+
+    if v?
+      joap.Parser.parse v
+
+  else if iq.tree().attrs.type is "error"
+    v = iq.getChild("methodResponse")?.
+      getChild("fault")?.
+      getChild("value")
+
+    if v?
+      joap.Parser.parse v
 
 class JOAPClient
 
