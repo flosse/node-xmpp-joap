@@ -208,6 +208,7 @@ class Manager extends events.EventEmitter
       @classExists
       @before(a)...
       @deleteInstance
+      @after(a)...
       @sendResponse
     ], (err) => @sendError err, a
 
