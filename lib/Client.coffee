@@ -111,14 +111,14 @@ parseSearch = (iq) ->
 
 addRPCElements = (iq, method, params=[]) ->
   throw new TypeError unless typeof method is "string"
-  iq.c("methodCall").c("methodName").t(method).up()
+  ref = iq.c("methodCall").c("methodName").t(method).up()
   if not (params instanceof Array)
     console?.warn? "No parameters added: parameter is not an array"
     return
   if params.length > 0
-    iq.c("params")
+    ref = ref.c("params")
     for p in params
-      iq.c("param")
+      ref.c("param").c("value")
         .cnode(joap.Serializer.serialize p).up().up()
 
 parseRPCParams = (iq) ->
