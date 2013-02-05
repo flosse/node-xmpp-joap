@@ -7,6 +7,7 @@ ltx     = require "ltx"
 events  = require "events"
 JID     = require("node-xmpp").JID
 joap    = require "./node-xmpp-joap"
+toobusy = require "toobusy"
 
 class Router extends events.EventEmitter
 
@@ -16,22 +17,25 @@ class Router extends events.EventEmitter
 
       if iq?.name is "iq" and iq.attrs?.type in ["set","get"]
 
-        action = joap.parse iq.children?[0]
+        action    = joap.parse iq.children?[0]
+        action.iq = iq
 
         try
           from = new JID iq.attrs.from
           to   = new JID iq.attrs.to
         catch e
           console.error "invalid JIDs in IQ stanza"
-          if iq.attrs.from?
-            action.from = iq.attrs.from
-            action.iq   = iq
-            @sendError (new Error "invalid 'to' attribute in IQ stanza"), action
+          @sendError (new Error "invalid 'to' attribute in IQ stanza"), action
+
+        if toobusy()
+          msg = "server is too busy"
+          @sendError (new Error msg), action
+          console.warn msg
+          return
 
         if action?.type? and to? and from?
 
           action.to       = to
-          action.iq       = iq
           action.from     = from
           action.class    = to.user
           action.instance = to.resource
@@ -41,6 +45,7 @@ class Router extends events.EventEmitter
             @emit "action", action
 
   sendError: (err, a) ->
+    return console.error "no 'from' attribute found" unless a.iq.attrs.from?
     @send new joap.stanza.ErrorIq a.type, err.code, err.message,
       to:   a.iq.attrs.from
       from: a.iq.attrs.to
