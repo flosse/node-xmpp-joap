@@ -18,6 +18,9 @@ class Router extends events.EventEmitter
       if iq?.name is "iq" and iq.attrs?.type in ["set","get"]
 
         action    = joap.parse iq.children?[0]
+
+        return unless action?
+
         action.iq = iq
 
         try
@@ -33,7 +36,7 @@ class Router extends events.EventEmitter
           console.warn msg
           return
 
-        if action?.type? and to? and from?
+        if action.type? and to? and from?
 
           action.to       = to
           action.from     = from
