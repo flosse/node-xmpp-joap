@@ -20,7 +20,7 @@
   },
   "devDependencies":
   {
-    "jasmine-node":   ">=1.0.21",
+    "jasmine-node":   ">=1.2.2",
     "coffee-script":  ">=1.4.0"
   },
   "repositories":
@@ -38,5 +38,5 @@
       "web":    "http://github.com/flosse/"
     }
   ],
-  "scripts": { "test": "jasmine-node --coffee spec/" }
+  "scripts": { "test": "jasmine-node --forceexit --coffee spec/" }
 }
