@@ -11,7 +11,7 @@ toobusy = require "toobusy"
 
 class Router extends events.EventEmitter
 
-  constructor: (@xmpp) ->
+  constructor: (@xmpp,opt={}) ->
 
     @xmpp.on "stanza", (iq) =>
 
@@ -30,7 +30,7 @@ class Router extends events.EventEmitter
           console.error "invalid JIDs in IQ stanza"
           @sendError (new Error "invalid 'to' attribute in IQ stanza"), action
 
-        if toobusy()
+        if opt.errorOnTooBusy and toobusy()
           msg = "server is too busy"
           @sendError (new Error msg), action
           console.warn msg

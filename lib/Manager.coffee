@@ -15,15 +15,18 @@ isMethod = (clz, inst, key) ->
 
 class Manager extends events.EventEmitter
 
-  constructor: (@xmpp) ->
+  constructor: (@xmpp, opt={}) ->
 
+    { errorOnTooBusy }  = opt
     @serverDescription  = {'en-US':"JOAP Server"}
     @serverAttributes   = {}
     @serverMethods      = {}
     @classes            = {}
     @_objects           = {}
     @_handlers          = { enter: {}, leave:{} }
-    @router = new joap.Router @xmpp
+
+    @router = new joap.Router @xmpp, { errorOnTooBusy }
+
     @router.on "describe", @onDescribe
     @router.on "add",      @onAdd
     @router.on "read",     @onRead
