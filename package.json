@@ -1,6 +1,6 @@
 {
   "name":         "node-xmpp-joap",
-  "version":      "0.0.13",
+  "version":      "0.0.14",
   "main":         "./lib/node-xmpp-joap",
   "description":  "Jabber Object Access Protocol (XEP-0075) library for node-xmpp",
   "author":       "Markus Kohlhase",
@@ -12,24 +12,22 @@
   "dependencies":
   {
     "node-expat": ">=2.0.0",
-    "node-xmpp":  ">=0.3.2",
-    "ltx":        ">=0.2.2",
+    "node-xmpp":  ">=0.5.2",
+    "ltx":        ">=0.2.3",
     "async":      ">=0.1.22",
-    "toobusy":    ">=0.2.2",
+    "toobusy":    ">=0.2.3",
     "node-uuid":  ">=1.4.0"
   },
   "devDependencies":
   {
-    "jasmine-node":   ">=1.2.2",
-    "coffee-script":  ">=1.4.0"
+    "jasmine-node":   ">=1.5.0",
+    "coffee-script":  ">=1.6.3"
   },
-  "repositories":
-  [
-    {
-      "type": "git",
-      "path": "git://github.com/flosse/node-xmpp-joap.git"
-    }
-  ],
+  "repository":
+  {
+    "type": "git",
+    "path": "git://github.com/flosse/node-xmpp-joap.git"
+  },
   "maintainers":
   [
     {

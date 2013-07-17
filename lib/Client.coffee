@@ -16,7 +16,7 @@ createIq = (type, to, customAttrs) ->
   id = uuid.v4()
   (new ltx.Element "iq",
     to: to.toString()
-    from: @xmpp.jid.toString()
+    from: @xmpp.connection.jid.toString()
     type:iqType
     id: id
   ).c(type, attrs)

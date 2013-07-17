@@ -1,5 +1,8 @@
 joap = require "../lib/node-xmpp-joap"
 ltx  = require "ltx"
+xmpp = require "node-xmpp"
+
+{ JID } = xmpp
 
 JOAP_NS = "jabber:iq:joap"
 RPC_NS  = "jabber:iq:rpc"
@@ -15,7 +18,7 @@ describe "Client", ->
     on: (channel, cb) ->
       @channels[channel] = cb
     removeListener: ->
-    jid: compJID
+    connection: jid: new JID compJID
 
   beforeEach ->
     @c = new joap.Client xmppComp

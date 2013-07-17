@@ -1,6 +1,8 @@
 joap = require "../lib/node-xmpp-joap"
 ltx  = require "ltx"
 
+{ JID } = require "node-xmpp"
+
 JOAP_NS = "jabber:iq:joap"
 RPC_NS  = "jabber:iq:rpc"
 
@@ -15,7 +17,7 @@ describe "Router", ->
     onData: (data) ->
     on: (channel, cb) ->
       @channels[channel] = cb
-    jid: compJID
+    connection: jid: new JID compJID
 
   xmppClient =
     send: (data) -> xmppComp.channels.stanza data

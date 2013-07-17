@@ -98,7 +98,7 @@ class Manager extends events.EventEmitter
     if constructorAttributes? and not (constructorAttributes instanceof Array)
       throw new Error "constructorAttributes option has to be an array"
 
-    clazz = new joap.object.Class "#{name}@#{@xmpp.jid.toString()}",
+    clazz = new joap.object.Class "#{name}@#{@xmpp.connection.jid.toString()}",
       creator: creator
       required: required
       protected: prot
@@ -137,7 +137,7 @@ class Manager extends events.EventEmitter
   getAddress: (clazz, instance) =>
     addr = ""
     addr += "#{clazz}@" if (typeof clazz in ["string", "number"])
-    addr += @router.xmpp.jid
+    addr += @router.xmpp.connection.jid
     addr += "/#{instance}" if (typeof(instance) in ["string", "number"])
     addr
 
