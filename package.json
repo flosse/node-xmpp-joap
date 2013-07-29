@@ -6,22 +6,22 @@
   "author":       "Markus Kohlhase",
   "contributors": ["Markus Kohlhase"],
   "licenses":     [{"type": "MIT"}],
-  "engine":       "node",
+  "engines":      { "node": ">=0.8.0" },
   "homepage":     "http://github.com/flosse/node-xmpp-joap",
   "bugs":         "http://github.com/flosse/node-xmpp-joap/issues",
   "dependencies":
   {
-    "node-expat": ">=2.0.0",
-    "node-xmpp":  ">=0.5.2",
-    "ltx":        ">=0.2.3",
-    "async":      ">=0.1.22",
-    "toobusy":    ">=0.2.3",
-    "node-uuid":  ">=1.4.0"
+    "node-expat": "~2.0.0",
+    "node-xmpp":  "~0.5.4",
+    "ltx":        "~0.2.4",
+    "async":      "~0.2.9",
+    "toobusy":    "~0.2.3",
+    "node-uuid":  "~1.4.0"
   },
   "devDependencies":
   {
-    "jasmine-node":   ">=1.5.0",
-    "coffee-script":  ">=1.6.3"
+    "jasmine-node":   "~1.10.2",
+    "coffee-script":  "~1.6.3"
   },
   "repository":
   {
@@ -36,5 +36,8 @@
       "web":    "http://github.com/flosse/"
     }
   ],
-  "scripts": { "test": "jasmine-node --forceexit --coffee spec/" }
+  "scripts": {
+    "prepublish": "coffee -bc -o lib/ src/*.coffee",
+    "test":       "coffee -bc -o lib src/*.coffee  && jasmine-node --forceexit --coffee spec/"
+  }
 }

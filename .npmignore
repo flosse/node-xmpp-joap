@@ -1,5 +1,5 @@
-lib/*.coffee
-spec/*.coffee
+*.coffee
+src/
 Cakefile
 .npmignore
 node_modules

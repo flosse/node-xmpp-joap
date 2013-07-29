@@ -180,11 +180,9 @@ router.on "rpc", (action) ->
 
 ## Running tests
 
-[jasmine-node](https://github.com/mhevery/jasmine-node)
-is required (`npm install -g jasmine-node`) for running the tests.
-
 ```shell
-cake test
+npm install
+npm test
 ```
 
 ## JOAP client implementations
