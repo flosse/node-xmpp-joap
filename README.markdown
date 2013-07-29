@@ -5,6 +5,8 @@ Jabber Object Access Protocol
 [node-xmpp](https://github.com/astro/node-xmpp).
 
 [![Build Status](https://secure.travis-ci.org/flosse/node-xmpp-joap.png)](http://travis-ci.org/flosse/node-xmpp-joap)
+[![Dependency Status](https://gemnasium.com/flosse/node-xmpp-joap.png)](https://gemnasium.com/flosse/node-xmpp-joap.png)
+[![NPM version](https://badge.fury.io/js/node-xmpp-joap.png)](http://badge.fury.io/js/node-xmpp-joap)
 
 ## Installation
 

@@ -1,6 +1,6 @@
 {
   "name":         "node-xmpp-joap",
-  "version":      "0.0.14",
+  "version":      "0.0.15",
   "main":         "./lib/node-xmpp-joap",
   "description":  "Jabber Object Access Protocol (XEP-0075) library for node-xmpp",
   "author":       "Markus Kohlhase",
@@ -38,6 +38,6 @@
   ],
   "scripts": {
     "prepublish": "coffee -bc -o lib/ src/*.coffee",
-    "test":       "coffee -bc -o lib src/*.coffee  && jasmine-node --forceexit --coffee spec/"
+    "test":       "coffee -bc -o lib src/*.coffee && jasmine-node --forceexit --coffee spec/"
   }
 }
