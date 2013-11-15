@@ -12,9 +12,9 @@
   "dependencies":
   {
     "node-expat":       "~2.0.0",
-    "node-xmpp":        "~0.7.1",
+    "node-xmpp":        "~0.8.0",
     "node-stringprep":  "~0.1.8",
-    "ltx":              "~0.3.0",
+    "ltx":              "~0.3.2",
     "async":            "~0.2.9",
     "toobusy":          "~0.2.4",
     "node-uuid":        "~1.4.1"
