@@ -16,6 +16,39 @@ With package manager [npm](http://npmjs.org/):
 
 ## Usage
 
+```coffeescript
+joap = require "node-xmpp-joap"
+xmpp = require "node-xmpp"
+
+app = new joap.Application new xmpp.Component
+  jid       : "mycomponent"
+  password  : "secret"
+  host      : "127.0.0.1"
+  port      : "8888"
+
+app.use (req, res, next) ->
+  console.log "received a #{req.type} request"
+  next()
+```
+
+### Alias methods
+
+```coffeescript
+app.read (req, res, next) ->
+  console.log "received a read request"
+  res.end { foo: "bar"}
+```
+is equivalent to
+
+```coffeescript
+app.use (req, res, next) ->
+  if req.type is 'read'
+    console.log "received a read request"
+    res.end { foo: "bar"}
+  else
+    next()
+```
+
 ### Manager
 
 ```coffeescript
