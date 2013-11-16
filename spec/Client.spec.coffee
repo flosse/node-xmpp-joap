@@ -1,6 +1,9 @@
-joap = require "../lib/node-xmpp-joap"
+joap = require "../src/node-xmpp-joap"
 ltx  = require "ltx"
 xmpp = require "node-xmpp"
+
+chai        = require 'chai'
+expect      = chai.expect
 
 { JID } = xmpp
 
@@ -20,28 +23,26 @@ describe "Client", ->
     removeListener: ->
     connection: jid: new JID compJID
 
-  beforeEach ->
-    @c = new joap.Client xmppComp
+  beforeEach -> @c = new joap.Client xmppComp
 
   it "is a class", ->
-   (expect typeof joap.Client).toEqual "function"
+   (expect typeof joap.Client).to.equal "function"
 
   it "takes an xmpp object as first argument", ->
-   (expect (new joap.Client xmppComp).xmpp).toEqual xmppComp
+   (expect (new joap.Client xmppComp).xmpp).to.equal xmppComp
 
   it "provides methods to perform JOAP actions", ->
     c = new joap.Client xmppComp
-    (expect typeof c.describe).toEqual "function"
-    (expect typeof c.read).toEqual "function"
-    (expect typeof c.add).toEqual "function"
-    (expect typeof c.edit).toEqual "function"
-    (expect typeof c.search).toEqual "function"
+    (expect typeof c.describe).to.equal "function"
+    (expect typeof c.read).to.equal "function"
+    (expect typeof c.add).to.equal "function"
+    (expect typeof c.edit).to.equal "function"
+    (expect typeof c.search).to.equal "function"
 
   describe "description method", ->
 
-    it "sends a correct iq", ->
+    it "sends a correct iq", (done) ->
 
-      done = false
       iq = null
       xmppComp.send = (req) ->
         iq = req
@@ -59,9 +60,9 @@ describe "Client", ->
 
         xmppComp.channels.stanza res
       @c.describe "class@c.domain.tld", (err, s, res) ->
-        (expect s.tree().name).toEqual 'iq'
-        (expect s.tree().attrs.id).toEqual iq.tree().attrs.id
-        (expect res).toEqual
+        (expect s.tree().name).to.equal 'iq'
+        (expect s.tree().attrs.id).to.equal iq.tree().attrs.id
+        (expect res).to.deep.equal
           desc: {}
           attributes:
             foo:
@@ -75,20 +76,18 @@ describe "Client", ->
               name: "myMethod"
               returnType: 'boolean'
               desc: 'en-US': "great method"
-          classes: {}
+          classes: []
 
-        done = true
-
-      (expect iq.tree().name).toEqual 'iq'
-      (expect iq.tree().children[0].toString()).toEqual '<describe ' +
+        (expect iq.tree().name).to.equal 'iq'
+        (expect iq.tree().children[0].toString()).to.equal '<describe ' +
         'xmlns="jabber:iq:joap"/>'
-      waitsFor -> done
+
+        done()
 
   describe "add method", ->
 
-    it "sends a correct iq", ->
+    it "sends a correct iq", (done) ->
 
-      done = false
       iq = null
       xmppComp.send = (req) ->
         iq = req.tree()
@@ -98,17 +97,14 @@ describe "Client", ->
         xmppComp.channels.stanza res
 
       @c.add "class@c.domain.tld", {x:"y"}, (err, s, res) ->
-        (expect s.tree().name).toEqual 'iq'
-        (expect res).toEqual "class@example.org/instance"
-        done = true
-
-      waitsFor -> done
+        (expect s.tree().name).to.equal 'iq'
+        (expect res).to.equal "class@example.org/instance"
+        done()
 
   describe "read method", ->
 
-    it "sends a correct iq", ->
+    it "sends a correct iq", (done) ->
 
-      done = false
       iq = null
       xmppComp.send = (req) ->
         iq = req
@@ -120,16 +116,14 @@ describe "Client", ->
         xmppComp.channels.stanza res
 
       @c.read "class@c.domain.tld/x", ["magic"], (err, s, res) ->
-        (expect s.tree().name).toEqual 'iq'
-        (expect res).toEqual {magic: 23}
-        done = true
-
-      waitsFor -> done
+        (expect s.tree().name).to.equal 'iq'
+        (expect res).to.eql {magic: 23}
+        done()
 
   describe "read method", ->
-    it "sends a correct iq", ->
 
-      done = false
+    it "sends a correct iq", (done) ->
+
       iq = null
       xmppComp.send = (req) ->
         iq = req
@@ -139,17 +133,14 @@ describe "Client", ->
         xmppComp.channels.stanza res
 
       @c.edit "class@c.domain.tld/x", { "magic":6 } , (err, s, res) ->
-        (expect s.tree().name).toEqual 'iq'
-        (expect res).toEqual "x@y.z/0"
-        done = true
-
-      waitsFor -> done
+        (expect s.tree().name).to.equal 'iq'
+        (expect res).to.equal "x@y.z/0"
+        done()
 
   describe "search method", ->
-    it "sends a correct iq", ->
 
-      done = false
-      iq = null
+    it "sends a correct iq", (done) ->
+
       xmppComp.send = (req) ->
         iq = req
         res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
@@ -158,21 +149,18 @@ describe "Client", ->
         xmppComp.channels.stanza res
 
       @c.search "class@c.domain.tld", { "magic":6 } , (err, s, res) ->
-        (expect res).toEqual ["x@y.z/0"]
-        done = true
-
-      waitsFor -> done
+        (expect res).to.eql ["x@y.z/0"]
+        done()
 
   describe "rpc method", ->
-    it "sends a correct iq", ->
 
-      done = false
-      iq = null
+    it "sends a correct iq", (done) ->
+
       xmppComp.send = (req) ->
         iq = req.tree()
         (expect iq.getChild("query")
           .getChild("methodCall")
-          .getChild("methodName").text()).toEqual "myMethod"
+          .getChild("methodName").text()).to.equal "myMethod"
         res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
         res.c("query", xmlns: RPC_NS)
           .c("methodResponse")
@@ -182,23 +170,17 @@ describe "Client", ->
         xmppComp.channels.stanza res.tree()
 
       @c.methodCall "myMethod", "class@c.domain.tld", ["avalue"] , (err, s, res) ->
-        (expect res).toEqual 7
-        done = true
-
-      waitsFor -> done
+        (expect res).to.equal 7
+        done()
 
   describe "delete method", ->
-    it "sends a correct iq", ->
-      done = false
-      iq = null
+
+    it "sends a correct iq", (done) ->
       xmppComp.send = (req) ->
         iq = req.tree()
-        (expect iq.getChild("delete")).toBeDefined()
+        (expect iq.getChild("delete")).to.exist
         res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
         res.c("delete", xmlns: JOAP_NS)
         xmppComp.channels.stanza res
 
-      @c.delete "class@c.domain.tld/inst", (err, s, res) ->
-        done = true
-
-      waitsFor -> done
+      @c.delete "class@c.domain.tld/inst", (err, s, res) -> done()

@@ -36,7 +36,7 @@ app.use (req, res, next) ->
 ```coffeescript
 app.read (req, res, next) ->
   console.log "received a read request"
-  res.end { foo: "bar"}
+  res.end { foo: "bar" }
 ```
 is equivalent to
 
@@ -44,7 +44,7 @@ is equivalent to
 app.use (req, res, next) ->
   if req.type is 'read'
     console.log "received a read request"
-    res.end { foo: "bar"}
+    res.end { foo: "bar" }
   else
     next()
 ```

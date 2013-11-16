@@ -49,11 +49,13 @@ class Parser
         action
       else if Parser.isRPCStanza xml
         call = xml.getChild "methodCall"
-        {
+        o =
           type: Parser.getType xml
           method: call.getChildText "methodName"
-          params: Parser.parse call.getChild "params"
-        }
+        v = Parser.parse call.getChild "params"
+        o.params = v if v?
+        o
+
       else
 
         child = xml.children?[0]

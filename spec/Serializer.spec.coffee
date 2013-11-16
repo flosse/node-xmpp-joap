@@ -1,28 +1,30 @@
+chai        = require 'chai'
+expect      = chai.expect
+
 describe "Serializer", ->
 
-  joap = require "../lib/node-xmpp-joap"
+  Serializer = require "../src/Serializer"
   ltx  = require "ltx"
-  Serializer = joap.Serializer
 
   describe "serialize", ->
 
     it "serializes basic data types", ->
 
-      (expect Serializer.serialize null ).toEqual ""
-      (expect Serializer.serialize undefined ).toEqual ""
-      (expect Serializer.serialize "foo" ).toEqual ltx.parse "<string>foo</string>"
-      (expect Serializer.serialize 2 ).toEqual ltx.parse "<int>2</int>"
-      (expect Serializer.serialize -0.3 ).toEqual ltx.parse "<double>-0.3</double>"
-      (expect Serializer.serialize true ).toEqual ltx.parse "<boolean>1</boolean>"
-      (expect Serializer.serialize [] ).toEqual ltx.parse "<array><data></data></array>"
-      (expect Serializer.serialize ["x", -0.35, false] ).toEqual ltx.parse "<array><data>" +
+      (expect Serializer.serialize null ).to.equal ""
+      (expect Serializer.serialize undefined ).to.equal ""
+      (expect Serializer.serialize("foo").toString()).to.eql "<string>foo</string>"
+      (expect Serializer.serialize(2).toString()).to.eql ltx.parse("<int>2</int>").toString()
+      (expect Serializer.serialize(-0.3).toString()).to.deep.eql ltx.parse("<double>-0.3</double>").toString()
+      (expect Serializer.serialize(true).toString()).to.deep.eql ltx.parse("<boolean>1</boolean>").toString()
+      (expect Serializer.serialize([]).toString()).to.eql ltx.parse("<array><data></data></array>").toString()
+      (expect Serializer.serialize(["x", -0.35, false]).toString()).to.eql ltx.parse("<array><data>" +
         "<value><string>x</string></value><value><double>-0.35</double></value><value>" +
-        "<boolean>0</boolean></value></data></array>"
-      (expect Serializer.serialize {a:"foo", b:["bar"]} ).toEqual ltx.parse "<struct>"+
+        "<boolean>0</boolean></value></data></array>").toString()
+      (expect Serializer.serialize({a:"foo", b:["bar"]}).toString()).to.eql ltx.parse("<struct>"+
         "<member><name>a</name><value><string>foo</string></value></member>" +
         "<member><name>b</name>" +
           "<value><array><data><value><string>bar</string></value></data></array>" +
-          "</value></member></struct>"
+          "</value></member></struct>").toString()
 
     it "serializes result attributes", ->
 
@@ -35,19 +37,19 @@ describe "Serializer", ->
       addr = "Class@component.example.com/instance"
 
       readObj = {a:"foo", b:2}
-      (expect Serializer.serialize readObj, readAct).toEqual ltx.parse "<read xmlns='jabber:iq:joap'>"+
+      (expect Serializer.serialize(readObj, readAct).toString()).to.deep.equal ltx.parse("<read xmlns='jabber:iq:joap'>"+
         "<attribute><name>a</name><value><string>foo</string></value></attribute>" +
         "<attribute><name>b</name><value><int>2</int></value></attribute>" +
-        "</read>"
+        "</read>").toString()
 
-      (expect Serializer.serialize addr, addAct).toEqual ltx.parse "<add xmlns='jabber:iq:joap'>"+
+      (expect Serializer.serialize addr, addAct).to.deep.equal ltx.parse "<add xmlns='jabber:iq:joap'>"+
         "<newAddress>#{addr}</newAddress></add>"
 
-      (expect Serializer.serialize null, editAct).toEqual ltx.parse "<edit xmlns='jabber:iq:joap' />"
-      (expect Serializer.serialize addr, editAct).toEqual ltx.parse "<edit xmlns='jabber:iq:joap' >" +
+      (expect Serializer.serialize null, editAct).to.deep.equal ltx.parse "<edit xmlns='jabber:iq:joap' />"
+      (expect Serializer.serialize addr, editAct).to.deep.equal ltx.parse "<edit xmlns='jabber:iq:joap' >" +
         "<newAddress>#{addr}</newAddress></edit>"
 
-      (expect Serializer.serialize null, delAct).toEqual ltx.parse "<delete xmlns='jabber:iq:joap' />"
+      (expect Serializer.serialize null, delAct).to.deep.equal ltx.parse "<delete xmlns='jabber:iq:joap' />"
 
       serverDesc =
         desc:
@@ -64,7 +66,7 @@ describe "Serializer", ->
             writable:false
             type: "int"
 
-      (expect Serializer.serialize serverDesc, descAct).toEqual ltx.parse "<describe xmlns='jabber:iq:joap' >" +
+      (expect Serializer.serialize(serverDesc, descAct).toString()).to.eql ltx.parse("<describe xmlns='jabber:iq:joap' >" +
         "<desc xml:lang='en-US' >A server</desc>"+
         "<desc xml:lang='de-DE' >Ein Server</desc>"+
         "<attributeDescription writable='true'><name>foo</name><type>bar</type>" +
@@ -73,10 +75,10 @@ describe "Serializer", ->
         "</attributeDescription>"+
         "<attributeDescription writable='false'><name>bar</name><type>int</type>" +
         "</attributeDescription>"+
-        "</describe>"
+        "</describe>").toString()
 
       searchResults = ["a", "b", "c"]
-      (expect Serializer.serialize searchResults, searchAct).toEqual ltx.parse "<search xmlns='jabber:iq:joap' >" +
+      (expect Serializer.serialize searchResults, searchAct).to.deep.equal ltx.parse "<search xmlns='jabber:iq:joap' >" +
         "<item>a</item>" +
         "<item>b</item>" +
         "<item>c</item>" +
@@ -86,8 +88,8 @@ describe "Serializer", ->
       customAct  = { type: "foo" }
       customData = { x: "y" }
       xmlData    = ltx.parse "<cutom><data><foo bar='baz' /></data></cutom>"
-      (expect Serializer.serialize null, customAct).toEqual ltx.parse "<foo xmlns='jabber:iq:joap' />"
-      (expect Serializer.serialize customData, customAct).toEqual ltx.parse "<foo xmlns='jabber:iq:joap' >" +
-        "<struct><member><name>x</name><value><string>y</string></value></member></struct></foo>"
-        (expect Serializer.serialize xmlData, customAct).toEqual ltx.parse "<foo xmlns='jabber:iq:joap' >" +
+      (expect Serializer.serialize null, customAct).to.deep.equal ltx.parse "<foo xmlns='jabber:iq:joap' />"
+      (expect Serializer.serialize(customData, customAct).toString()).to.deep.equal ltx.parse("<foo xmlns='jabber:iq:joap' >" +
+        "<struct><member><name>x</name><value><string>y</string></value></member></struct></foo>").toString()
+        (expect Serializer.serialize xmlData, customAct).to.deep.equal ltx.parse "<foo xmlns='jabber:iq:joap' >" +
         "<cutom><data><foo bar='baz' /></data></cutom>" + "</foo>"

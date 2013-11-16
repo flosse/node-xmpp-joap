@@ -1,5 +1,8 @@
-joap = require "../lib/node-xmpp-joap"
+Router = require "../src/Router"
 ltx  = require "ltx"
+
+chai        = require 'chai'
+expect      = chai.expect
 
 { JID } = require "node-xmpp"
 
@@ -13,55 +16,52 @@ describe "Router", ->
 
   xmppComp =
     channels: {}
-    send: (data) -> xmppClient.onData data
+    send: (data) -> process.nextTick -> xmppClient.onData data
     onData: (data) ->
     on: (channel, cb) ->
       @channels[channel] = cb
     connection: jid: new JID compJID
 
   xmppClient =
-    send: (data) -> xmppComp.channels.stanza data
+    send: (data) -> process.nextTick -> xmppComp.channels.stanza data
     onData: (data, cb) ->
 
   beforeEach ->
-    @router = new joap.Router xmppComp
+    @router = new Router xmppComp
 
-  it "ignores stanzas that has an invalid 'from' attribute", ->
+  it "ignores stanzas that has an invalid 'from' attribute", (done) ->
     @request = new ltx.Element "iq",
       id:"invalid_req"
       to: "class@comp.example.tld"
       type:'set'
     @request.c "add", xmlns:JOAP_NS
+    xmppComp.on "stanza", (data) -> done()
     xmppClient.send @request
 
-  it "returns an err stanzas if 'to' attribute is invalid", ->
+  it "returns an err stanzas if 'to' attribute is invalid", (done) ->
     @request = new ltx.Element "iq",
       id:"invalid_req"
       from: "client@example.tld"
       type:'set'
     @request.c "add", xmlns:JOAP_NS
-    done = false
     xmppClient.onData = (data) ->
       errMsg = data.getChildText("error")
-      (expect errMsg).toEqual "invalid 'to' attribute in IQ stanza"
-      done = true
+      (expect errMsg).to.eql "invalid 'to' attribute in IQ stanza"
+      done()
     xmppClient.send @request
-    waitsFor -> done
 
-  it "supports custom joap actions", ->
+  it "supports custom joap actions", (done) ->
     @request = new ltx.Element "iq",
       id:"invalid_req"
       from: "client@example.tld"
       to: "class@comp.example.tld"
       type:'set'
     @request.c "foo", xmlns:JOAP_NS
-    done = false
     @router.on "foo", (action) =>
       @router.sendResponse action, (new ltx.Element "customdata", myAttrs: "custom response")
 
     xmppClient.onData = (data) ->
       data = data.getChild("foo").getChild("customdata")
-      (expect data.attrs.myAttrs).toEqual "custom response"
-      done = true
+      (expect data.attrs.myAttrs).to.equal "custom response"
+      done()
     xmppClient.send @request
-    waitsFor -> done
