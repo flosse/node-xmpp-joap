@@ -158,14 +158,16 @@ describe "Client", ->
 
       xmppComp.send = (req) ->
         iq = req.tree()
-        (expect iq.getChild("query")
-          .getChild("methodCall")
-          .getChild("methodName").text()).to.equal "myMethod"
+        mName = iq.getChild "query"
+          .getChild "methodCall"
+          .getChild "methodName"
+          .text()
+        (expect mName).to.equal "myMethod"
         res = new ltx.Element "iq", type: 'result', id: iq.tree().attrs.id
         res.c("query", xmlns: RPC_NS)
-          .c("methodResponse")
-            .c("params")
-              .c("param")
+          .c "methodResponse"
+            .c "params"
+              .c "param"
                 .c("value").c("int").t(7)
         xmppComp.channels.stanza res.tree()
 

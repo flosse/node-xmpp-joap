@@ -19,19 +19,19 @@ describe "Manager", ->
     from = "#{clazz}@#{from}" if clazz?
     from += "/#{instance}"    if instance?
     errMsg = new joap.stanza.ErrorIq type, code, msg,
-      to:   clientJID
-      from: from
-      id:   "#{type}_id_0"
+      to    : clientJID
+      from  : from
+      id    : "#{type}_id_0"
 
   createRequest = (type, clazz, instance) ->
     to = compJID
     to = "#{clazz}@#{to}" if clazz?
     to += "/#{instance}"  if instance?
     iq = new ltx.Element "iq",
-      to: to
-      from:clientJID
-      id:"#{type}_id_0"
-      type:'set'
+      to    : to
+      from  : clientJID
+      id    : "#{type}_id_0"
+      type  : 'set'
     if type is "query"
       iq.c type, xmlns:RPC_NS
     else
@@ -54,7 +54,7 @@ describe "Manager", ->
     @mgr = new joap.Manager xmppComp
     @compare = (res) ->
       (expect res.toString()).to.equal @result.toString()
-    @run = (cb) =>
+    @run = (cb) ->
       xmppClient.onData = (data) -> cb data
       xmppClient.send @request
 
@@ -70,7 +70,7 @@ describe "Manager", ->
     it "supports a method to register classes", ->
 
       class User
-        constructor: (@name, @age)->
+        constructor: (@name, @age) ->
 
       @mgr.addClass "user", User,
         required: ["name"]
