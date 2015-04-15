@@ -1,13 +1,13 @@
 ###
 This program is distributed under the terms of the MIT license.
-Copyright 2012 - 2014 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+Copyright 2012 - 2015 (c) Markus Kohlhase <mail@markus-kohlhase.de>
 ###
 
 ltx     = require "ltx"
 events  = require "events"
 JID     = require("node-xmpp").JID
 joap    = require "./node-xmpp-joap"
-toobusy = require "toobusy"
+toobusy = require "toobusy-js"
 
 class Router extends events.EventEmitter
 
