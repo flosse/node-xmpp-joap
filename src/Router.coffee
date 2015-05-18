@@ -5,7 +5,7 @@ Copyright 2012 - 2015 (c) Markus Kohlhase <mail@markus-kohlhase.de>
 
 ltx     = require "ltx"
 events  = require "events"
-JID     = require("node-xmpp").JID
+JID     = require("node-xmpp-core").JID
 joap    = require "./node-xmpp-joap"
 toobusy = require "toobusy-js"
 

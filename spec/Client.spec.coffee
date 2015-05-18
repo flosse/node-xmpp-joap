@@ -1,6 +1,6 @@
 joap = require "../src/node-xmpp-joap"
 ltx  = require "ltx"
-xmpp = require "node-xmpp"
+xmpp = require "node-xmpp-core"
 
 chai        = require 'chai'
 expect      = chai.expect

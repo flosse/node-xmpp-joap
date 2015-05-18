@@ -4,7 +4,7 @@ expect      = chai.expect
 joap = require "../lib/node-xmpp-joap"
 ltx  = require "ltx"
 
-{ JID } = require "node-xmpp"
+{ JID } = require "node-xmpp-core"
 
 JOAP_NS = "jabber:iq:joap"
 RPC_NS  = "jabber:iq:rpc"

@@ -16,16 +16,16 @@
   "dependencies": {
     "async": "~0.9.0",
     "ltx": "~0.9.0",
-    "node-expat": "~2.3.7",
+    "node-expat": "~2.3.8",
     "node-stringprep": "~0.7.0",
     "node-uuid": "~1.4.3",
-    "node-xmpp": "~1.0.0-alpha2",
-    "toobusy-js": "^0.4.1"
+    "node-xmpp-core": "~1.0.0-alpha14",
+    "toobusy-js": "^0.4.2"
   },
   "devDependencies": {
     "coffee-script": "~1.9.2",
-    "chai": "~2.2.0",
-    "mocha": "~2.2.4",
+    "chai": "~2.3.0",
+    "mocha": "~2.2.5",
     "sinon-chai": "~2.7.0",
     "sinon": "~1.14.1"
   },

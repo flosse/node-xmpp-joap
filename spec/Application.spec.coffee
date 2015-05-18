@@ -7,7 +7,7 @@ should      = chai.should()
 
 ltx         = require 'ltx'
 Application = require '../src/Application'
-{ JID }     = require "node-xmpp"
+{ JID }     = require "node-xmpp-core"
 JOAP_NS     = "jabber:iq:joap"
 
 compJID   = "comp.exmaple.tld"

@@ -6,7 +6,7 @@ Copyright 2012 - 2014 (c) Markus Kohlhase <mail@markus-kohlhase.de>
 ltx  = require "ltx"
 joap = require "./node-xmpp-joap"
 uuid = require 'node-uuid'
-JID  = require('node-xmpp').JID
+JID  = require('node-xmpp-core').JID
 
 createIq = (type, to, customAttrs) ->
   iqType = if (type in ["read", "search", "describe"]) then "get" else "set"
