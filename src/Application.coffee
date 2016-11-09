@@ -1,3 +1,8 @@
+###
+This program is distributed under the terms of the MIT license.
+Copyright 2012 - 2016 (c) Markus Kohlhase <mail@markus-kohlhase.de>
+###
+
 Router = require "./Router"
 async  = require "async"
 
