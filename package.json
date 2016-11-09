@@ -1,12 +1,9 @@
 {
   "name": "node-xmpp-joap",
-  "version": "0.0.19",
+  "version": "0.1.0",
   "main": "./lib/node-xmpp-joap",
   "description": "Jabber Object Access Protocol (XEP-0075) library for node-xmpp",
   "author": "Markus Kohlhase",
-  "contributors": [
-    "Markus Kohlhase"
-  ],
   "license": "MIT",
   "engines": {
     "node": ">=0.10.0"
@@ -14,20 +11,20 @@
   "homepage": "http://github.com/flosse/node-xmpp-joap",
   "bugs": "http://github.com/flosse/node-xmpp-joap/issues",
   "dependencies": {
-    "async": "~0.9.0",
-    "ltx": "~0.9.0",
-    "node-expat": "~2.3.8",
-    "node-stringprep": "~0.7.0",
-    "node-uuid": "~1.4.3",
-    "node-xmpp-core": "~1.0.0-alpha14",
-    "toobusy-js": "^0.4.2"
+    "async": "^2.1.2",
+    "ltx": "^2.5.1",
+    "node-expat": "^2.3.15",
+    "node-stringprep": "^0.8.0",
+    "node-uuid": "^1.4.7",
+    "node-xmpp-core": "^5.0.4",
+    "toobusy-js": "^0.5.1"
   },
   "devDependencies": {
-    "coffee-script": "~1.9.2",
-    "chai": "~2.3.0",
-    "mocha": "~2.2.5",
-    "sinon-chai": "~2.7.0",
-    "sinon": "~1.14.1"
+    "chai": "^3.5.0",
+    "coffee-script": "~1.11.1",
+    "mocha": "^3.1.2",
+    "sinon": "^1.17.6",
+    "sinon-chai": "^2.8.0"
   },
   "repository": {
     "type": "git",
