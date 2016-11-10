@@ -4,7 +4,7 @@ Jabber Object Access Protocol
 [XEP-0075](http://xmpp.org/extensions/xep-0075.html) library for
 [node-xmpp](https://github.com/astro/node-xmpp).
 
-[![Build Status](https://secure.travis-ci.org/flosse/node-xmpp-joap.svg)](http://travis-ci.org/flosse/node-xmpp-joap)
+[![Build Status](https://travis-ci.org/flosse/node-xmpp-joap.svg?branch=master)](http://travis-ci.org/flosse/node-xmpp-joap)
 [![Dependency Status](https://gemnasium.com/flosse/node-xmpp-joap.svg)](https://gemnasium.com/flosse/node-xmpp-joap.png)
 [![NPM version](https://badge.fury.io/js/node-xmpp-joap.svg)](http://badge.fury.io/js/node-xmpp-joap)
 
@@ -16,67 +16,81 @@ With package manager [npm](http://npmjs.org/):
 
 ## Usage
 
-```coffeescript
-joap = require "node-xmpp-joap"
-xmpp = require "node-xmpp"
+```js
+import joap from "node-xmpp-joap";
+import xmpp from "node-xmpp";
 
-app = new joap.Application new xmpp.Component
-  jid       : "mycomponent"
-  password  : "secret"
-  host      : "127.0.0.1"
+const app = new joap.Application(new xmpp.Component({
+  jid       : "mycomponent",
+  password  : "secret",
+  host      : "127.0.0.1",
   port      : "8888"
+}));
 
-app.use (req, res, next) ->
-  console.log "received a #{req.type} request"
-  next()
+app.use((req, res, next) => {
+  console.log(`received a ${req.type} request`);
+  next();
+});
 ```
 
 ### Alias methods
 
-```coffeescript
-app.read (req, res, next) ->
-  console.log "received a read request"
-  res.end { foo: "bar" }
+```js
+app.read((req, res, next) => {
+  console.log("received a read request");
+  res.end({ foo: "bar" });
+});
 ```
 is equivalent to
 
-```coffeescript
-app.use (req, res, next) ->
-  if req.type is 'read'
-    console.log "received a read request"
-    res.end { foo: "bar" }
-  else
-    next()
+```js
+app.use((req, res, next) => {
+  if (req.type === 'read') {
+    console.log("received a read request");
+    res.end({ foo: "bar" });
+  } else {
+    next();
+  }
+});
 ```
 
 ### Manager
 
-```coffeescript
-xmpp = require "node-xmpp"
-joap = require "node-xmpp-joap"
+```js
+import xmpp from "node-xmpp";
+import joap from "node-xmpp-joap";
 
-comp = new xmpp.Component
-  jid       : "mycomponent"
-  password  : "secret"
-  host      : "127.0.0.1"
+const comp = new xmpp.Component({
+  jid       : "mycomponent",
+  password  : "secret",
+  host      : "127.0.0.1",
   port      : "8888"
+});
 
-class User
-  constructor: (@id, options={}) ->
+class User {
+  constructor(id, options={}){
+    this.id = id;
+  }
+}
 
-# create a new manager instance
-mgr = new joap.Manager comp
+// create a new manager instance
+const mgr = new joap.Manager(comp);
 
-# add a class
-mgr.addClass "User", User,
-  required: ["name", "age"]
-  protected: ["id"]
+// add a class
+mgr.addClass("User", User, {
+  required: ["name", "age"],
+  protected: ["id"],
   constructorAttributes: ["id", "options"]
+});
 
-# implement the ACL by overriding the method
-mgr.hasPermission = (action, next) ->
-  if myACLRules(action) then next null, action
-  else next (new joap.Error "You are not allowed to do that :-P"), 403
+// implement the ACL by overriding the method
+mgr.hasPermission = (action, next) => {
+  if (myACLRules(action)) {
+    next(null, action);
+  } else {
+    next(new joap.Error("You are not allowed to do that :-P"), 403);
+  }
+};
 ```
 
 ### Client
